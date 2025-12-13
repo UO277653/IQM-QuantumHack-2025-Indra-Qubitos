@@ -3,7 +3,9 @@ from dataclasses import dataclass
 from typing import List, Tuple, Optional
 import random
 
-# import quantum_library as qlib # Import your own quantum library
+import quantum_library as qlib # Import your own quantum library
+
+quantum_algorithm = "random_walk"
 
 @dataclass
 class Soldier:
@@ -107,11 +109,13 @@ class QuantumBattlefield:
         for soldier in self.soldiers:
             if not soldier.is_alive():
                 continue
+            
+            current_pos = (soldier.x, soldier.y)
             if soldier.team == "Quantum":
                 # take the best posible move
                 # the function must return a tuple best_move = (x,y) based on the current position of the soldier
                 # it can accept any desired extra argument
-                best_move = (random.randint(-1, 1), random.randint(-1, 1)) # qlib.quantum_best_move((soldier.x, soldier.y))
+                best_move = qlib.quantum_best_move(current_pos, quantum_algorithm)
             else:
                 # the classical team moves using random walks
                 best_move = (random.randint(-1, 1), random.randint(-1, 1))
