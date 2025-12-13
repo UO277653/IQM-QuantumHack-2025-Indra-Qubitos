@@ -12,6 +12,10 @@ Test Types:
 """
 
 import argparse
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))
+
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
