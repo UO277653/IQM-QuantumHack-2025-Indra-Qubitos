@@ -274,56 +274,42 @@ class BattlefieldTester:
         print("GENERATING COMPREHENSIVE VISUALIZATIONS")
         print(f"{'='*60}\n")
 
-        # Set style
-        sns.set_style("whitegrid")
-        plt.rcParams['figure.figsize'] = (16, 12)
+        # Set modern style
+        sns.set_style("darkgrid")
+        plt.rcParams['figure.facecolor'] = '#f8f9fa'
+        plt.rcParams['axes.facecolor'] = 'white'
+        plt.rcParams['font.family'] = 'sans-serif'
+        plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans']
 
-        # Create figure with subplots
-        fig = plt.figure(figsize=(18, 14))
+        # Create figure with subplots - 2x2 grid (4 plots)
+        fig = plt.figure(figsize=(16, 11))
+        fig.patch.set_facecolor('#f8f9fa')
+
+        # Add main title
+        fig.suptitle('QUANTUM BATTLEFIELD ANALYSIS DASHBOARD',
+                     fontsize=20, fontweight='bold', y=0.98, color='#2c3e50',
+                     bbox=dict(boxstyle='round,pad=0.5', facecolor='#e2e8f0', edgecolor='#cbd5e1', linewidth=2))
 
         # 1. Victory Distribution (Pie Chart)
-        ax1 = plt.subplot(3, 3, 1)
+        ax1 = plt.subplot(2, 2, 1)
         self._plot_victory_distribution(ax1)
 
-        # 2. Battle Duration Distribution
-        ax2 = plt.subplot(3, 3, 2)
-        self._plot_duration_distribution(ax2)
+        # 2. Win Rate by Initial Team Size
+        ax2 = plt.subplot(2, 2, 2)
+        self._plot_winrate_by_team_size(ax2)
 
-        # 3. Survivors Distribution
-        ax3 = plt.subplot(3, 3, 3)
-        self._plot_survivors_distribution(ax3)
+        # 3. Battle Outcome Timeline
+        ax3 = plt.subplot(2, 2, 3)
+        self._plot_battle_timeline(ax3)
 
-        # 4. Turns per Battle
-        ax4 = plt.subplot(3, 3, 4)
-        self._plot_turns_distribution(ax4)
+        # 4. Summary Statistics Table
+        ax4 = plt.subplot(2, 2, 4)
+        self._plot_summary_statistics_table(ax4)
 
-        # 5. Win Rate by Initial Team Size
-        ax5 = plt.subplot(3, 3, 5)
-        self._plot_winrate_by_team_size(ax5)
-
-        # 6. Average Survivors by Winner
-        ax6 = plt.subplot(3, 3, 6)
-        self._plot_survivors_by_winner(ax6)
-
-        # 7. Battle Outcome Timeline
-        ax7 = plt.subplot(3, 3, 7)
-        self._plot_battle_timeline(ax7)
-
-        # 8. Final Position Heatmap - Quantum
-        ax8 = plt.subplot(3, 3, 8)
-        self._plot_position_heatmap(ax8, 'Quantum')
-
-        # 9. Final Position Heatmap - Classical
-        ax9 = plt.subplot(3, 3, 9)
-        self._plot_position_heatmap(ax9, 'Classical')
-
-        plt.tight_layout()
-        plt.savefig('battlefield_test_results.png', dpi=300, bbox_inches='tight')
+        plt.tight_layout(rect=[0, 0.02, 1, 0.96])
+        plt.savefig('battlefield_test_results.png', dpi=300, bbox_inches='tight', facecolor='#f8f9fa')
         print("Saved comprehensive plot: battlefield_test_results.png")
         plt.close()
-
-        # Generate additional detailed plots
-        self._generate_detailed_statistics_plot()
 
     def _plot_victory_distribution(self, ax):
         """Plot victory distribution pie chart."""
@@ -332,52 +318,38 @@ class BattlefieldTester:
         for w in winners:
             winner_counts[w] += 1
 
-        colors = {'Quantum': '#4169E1', 'Classical': '#DC143C', 'Draw': '#808080'}
+        # Modern color palette
+        colors = {
+            'Quantum': '#3b82f6',    # Modern blue
+            'Classical': '#ef4444',   # Modern red
+            'Draw': '#64748b'         # Modern gray
+        }
         labels = list(winner_counts.keys())
         sizes = list(winner_counts.values())
-        plot_colors = [colors.get(label, '#CCCCCC') for label in labels]
+        plot_colors = [colors.get(label, '#94a3b8') for label in labels]
 
-        ax.pie(sizes, labels=labels, autopct='%1.1f%%', colors=plot_colors, startangle=90)
-        ax.set_title('Victory Distribution', fontsize=12, fontweight='bold')
+        # Add explode effect for visual impact
+        explode = [0.05 if label == 'Quantum' else 0.03 for label in labels]
 
-    def _plot_duration_distribution(self, ax):
-        """Plot battle duration distribution."""
-        durations = [r.duration_seconds * 1000 for r in self.results]  # Convert to ms
-        ax.hist(durations, bins=30, color='#2E8B57', alpha=0.7, edgecolor='black')
-        ax.set_xlabel('Duration (ms)')
-        ax.set_ylabel('Frequency')
-        ax.set_title('Battle Duration Distribution', fontsize=12, fontweight='bold')
-        ax.axvline(np.mean(durations), color='red', linestyle='--', linewidth=2, label=f'Mean: {np.mean(durations):.1f}ms')
-        ax.legend()
+        wedges, texts, autotexts = ax.pie(
+            sizes,
+            labels=labels,
+            autopct='%1.1f%%',
+            colors=plot_colors,
+            startangle=90,
+            explode=explode,
+            shadow=True,
+            textprops={'fontsize': 11, 'weight': 'bold'}
+        )
 
-    def _plot_survivors_distribution(self, ax):
-        """Plot survivors distribution."""
-        quantum_survivors = [r.quantum_survivors for r in self.results]
-        classical_survivors = [r.classical_survivors for r in self.results]
+        # Make percentage text white for better contrast
+        for autotext in autotexts:
+            autotext.set_color('white')
+            autotext.set_fontsize(12)
 
-        x = np.arange(max(max(quantum_survivors), max(classical_survivors)) + 1)
-        quantum_dist = [quantum_survivors.count(i) for i in x]
-        classical_dist = [classical_survivors.count(i) for i in x]
+        ax.set_title('VICTORY DISTRIBUTION', fontsize=14, fontweight='bold', pad=15, color='#1e293b')
 
-        width = 0.35
-        ax.bar(x - width/2, quantum_dist, width, label='Quantum', color='#4169E1', alpha=0.7)
-        ax.bar(x + width/2, classical_dist, width, label='Classical', color='#DC143C', alpha=0.7)
 
-        ax.set_xlabel('Number of Survivors')
-        ax.set_ylabel('Frequency')
-        ax.set_title('Survivors Distribution', fontsize=12, fontweight='bold')
-        ax.legend()
-        ax.set_xticks(x)
-
-    def _plot_turns_distribution(self, ax):
-        """Plot distribution of battle turns."""
-        turns = [r.turns for r in self.results]
-        ax.hist(turns, bins=20, color='#9370DB', alpha=0.7, edgecolor='black')
-        ax.set_xlabel('Number of Turns')
-        ax.set_ylabel('Frequency')
-        ax.set_title('Battle Length Distribution', fontsize=12, fontweight='bold')
-        ax.axvline(np.mean(turns), color='red', linestyle='--', linewidth=2, label=f'Mean: {np.mean(turns):.1f}')
-        ax.legend()
 
     def _plot_winrate_by_team_size(self, ax):
         """Plot win rate by initial team size."""
@@ -391,40 +363,31 @@ class BattlefieldTester:
         quantum_rates = [size_wins[s]['Quantum'] / sum(size_wins[s].values()) * 100 for s in sizes]
         classical_rates = [size_wins[s]['Classical'] / sum(size_wins[s].values()) * 100 for s in sizes]
 
-        ax.plot(sizes, quantum_rates, marker='o', label='Quantum Win Rate', color='#4169E1', linewidth=2)
-        ax.plot(sizes, classical_rates, marker='s', label='Classical Win Rate', color='#DC143C', linewidth=2)
-        ax.set_xlabel('Quantum Size - Classical Size')
-        ax.set_ylabel('Win Rate (%)')
-        ax.set_title('Win Rate by Team Size Difference', fontsize=12, fontweight='bold')
-        ax.legend()
-        ax.grid(True, alpha=0.3)
-        ax.axhline(50, color='black', linestyle=':', alpha=0.5)
+        # Plot with modern styling
+        ax.plot(sizes, quantum_rates, marker='o', label='Quantum',
+                color='#3b82f6', linewidth=3, markersize=8,
+                markerfacecolor='#3b82f6', markeredgewidth=2, markeredgecolor='white')
+        ax.plot(sizes, classical_rates, marker='s', label='Classical',
+                color='#ef4444', linewidth=3, markersize=8,
+                markerfacecolor='#ef4444', markeredgewidth=2, markeredgecolor='white')
 
-    def _plot_survivors_by_winner(self, ax):
-        """Plot average survivors grouped by winner."""
-        winners = ['Quantum', 'Classical', 'Draw']
-        quantum_survivors_by_winner = defaultdict(list)
-        classical_survivors_by_winner = defaultdict(list)
+        ax.set_xlabel('Team Size Difference (Quantum - Classical)', fontsize=11, fontweight='bold', color='#334155')
+        ax.set_ylabel('Win Rate (%)', fontsize=11, fontweight='bold', color='#334155')
+        ax.set_title('WIN RATE BY TEAM SIZE', fontsize=14, fontweight='bold', pad=15, color='#1e293b')
 
-        for r in self.results:
-            quantum_survivors_by_winner[r.winner].append(r.quantum_survivors)
-            classical_survivors_by_winner[r.winner].append(r.classical_survivors)
+        # Improved legend
+        ax.legend(loc='best', frameon=True, shadow=True, fancybox=True, fontsize=10)
 
-        quantum_means = [np.mean(quantum_survivors_by_winner[w]) if quantum_survivors_by_winner[w] else 0 for w in winners]
-        classical_means = [np.mean(classical_survivors_by_winner[w]) if classical_survivors_by_winner[w] else 0 for w in winners]
+        # Better grid
+        ax.grid(True, alpha=0.2, linestyle='--', linewidth=0.8)
+        ax.axhline(50, color='#64748b', linestyle='--', alpha=0.6, linewidth=2, label='50% baseline')
 
-        x = np.arange(len(winners))
-        width = 0.35
+        # Style the axes
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_color('#cbd5e1')
+        ax.spines['bottom'].set_color('#cbd5e1')
 
-        ax.bar(x - width/2, quantum_means, width, label='Quantum Survivors', color='#4169E1', alpha=0.7)
-        ax.bar(x + width/2, classical_means, width, label='Classical Survivors', color='#DC143C', alpha=0.7)
-
-        ax.set_xlabel('Battle Winner')
-        ax.set_ylabel('Average Survivors')
-        ax.set_title('Average Survivors by Winner', fontsize=12, fontweight='bold')
-        ax.set_xticks(x)
-        ax.set_xticklabels(winners)
-        ax.legend()
 
     def _plot_battle_timeline(self, ax):
         """Plot battle outcomes over time."""
@@ -435,107 +398,84 @@ class BattlefieldTester:
         window = min(20, len(quantum_wins))
         rolling_winrate = np.convolve(quantum_wins, np.ones(window)/window, mode='valid')
 
-        ax.plot(range(len(rolling_winrate)), rolling_winrate * 100, color='#4169E1', linewidth=2)
-        ax.set_xlabel('Battle ID')
-        ax.set_ylabel('Quantum Win Rate (%)')
-        ax.set_title(f'Quantum Win Rate Over Time (Rolling Window: {window})', fontsize=12, fontweight='bold')
-        ax.axhline(50, color='black', linestyle='--', alpha=0.5, label='50% Win Rate')
-        ax.legend()
-        ax.grid(True, alpha=0.3)
+        # Plot with gradient effect
+        x = range(len(rolling_winrate))
+        y = rolling_winrate * 100
 
-    def _plot_position_heatmap(self, ax, team):
-        """Plot heatmap of final positions for winning team."""
-        heatmap = np.zeros((self.grid_size[1], self.grid_size[0]))
+        ax.plot(x, y, color='#3b82f6', linewidth=3, label='Quantum Win Rate', zorder=3)
+        ax.fill_between(x, y, 50, where=(np.array(y) >= 50), alpha=0.2, color='#3b82f6', interpolate=True)
+        ax.fill_between(x, y, 50, where=(np.array(y) < 50), alpha=0.2, color='#ef4444', interpolate=True)
 
-        for r in self.results:
-            if r.winner == team:
-                for x, y, t in r.final_positions:
-                    if t == team:
-                        heatmap[int(y), int(x)] += 1
+        ax.set_xlabel('Battle Sequence', fontsize=11, fontweight='bold', color='#334155')
+        ax.set_ylabel('Win Rate (%)', fontsize=11, fontweight='bold', color='#334155')
+        ax.set_title(f'BATTLE OUTCOME TIMELINE (Window: {window})', fontsize=14, fontweight='bold', pad=15, color='#1e293b')
 
-        color = 'Blues' if team == 'Quantum' else 'Reds'
-        sns.heatmap(heatmap, annot=True, fmt='.0f', cmap=color, ax=ax, cbar_kws={'label': 'Count'})
-        ax.set_title(f'{team} Final Positions (Wins Only)', fontsize=12, fontweight='bold')
-        ax.set_xlabel('X Position')
-        ax.set_ylabel('Y Position')
+        # Reference line
+        ax.axhline(50, color='#64748b', linestyle='--', alpha=0.6, linewidth=2, label='Equal win rate')
 
-    def _generate_detailed_statistics_plot(self):
-        """Generate additional detailed statistics plot."""
-        fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+        # Improved legend
+        ax.legend(loc='best', frameon=True, shadow=True, fancybox=True, fontsize=10)
 
-        # 1. Correlation: Initial Size vs Survivors
-        ax1 = axes[0, 0]
-        quantum_initial = [r.quantum_initial_count for r in self.results]
-        quantum_survivors = [r.quantum_survivors for r in self.results]
-        ax1.scatter(quantum_initial, quantum_survivors, alpha=0.5, color='#4169E1', label='Quantum')
+        # Better grid
+        ax.grid(True, alpha=0.2, linestyle='--', linewidth=0.8)
 
-        classical_initial = [r.classical_initial_count for r in self.results]
-        classical_survivors = [r.classical_survivors for r in self.results]
-        ax1.scatter(classical_initial, classical_survivors, alpha=0.5, color='#DC143C', label='Classical')
+        # Style the axes
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_color('#cbd5e1')
+        ax.spines['bottom'].set_color('#cbd5e1')
 
-        ax1.set_xlabel('Initial Team Size')
-        ax1.set_ylabel('Final Survivors')
-        ax1.set_title('Initial Size vs Survivors', fontsize=12, fontweight='bold')
-        ax1.legend()
-        ax1.grid(True, alpha=0.3)
+        # Set y-axis limits for better visualization
+        ax.set_ylim([0, 100])
 
-        # 2. Turn Distribution by Winner
-        ax2 = axes[0, 1]
-        quantum_win_turns = [r.turns for r in self.results if r.winner == 'Quantum']
-        classical_win_turns = [r.turns for r in self.results if r.winner == 'Classical']
-        draw_turns = [r.turns for r in self.results if r.winner == 'Draw']
+    def _plot_summary_statistics_table(self, ax):
+        """Plot summary statistics table."""
+        ax.axis('off')
 
-        ax2.hist([quantum_win_turns, classical_win_turns, draw_turns],
-                bins=15, label=['Quantum Wins', 'Classical Wins', 'Draws'],
-                color=['#4169E1', '#DC143C', '#808080'], alpha=0.6)
-        ax2.set_xlabel('Number of Turns')
-        ax2.set_ylabel('Frequency')
-        ax2.set_title('Battle Length by Winner', fontsize=12, fontweight='bold')
-        ax2.legend()
-
-        # 3. Execution Time Statistics
-        ax3 = axes[1, 0]
-        durations = [r.duration_seconds * 1000 for r in self.results]
-        turns = [r.turns for r in self.results]
-        ax3.scatter(turns, durations, alpha=0.5, color='#2E8B57')
-        ax3.set_xlabel('Number of Turns')
-        ax3.set_ylabel('Execution Time (ms)')
-        ax3.set_title('Performance: Turns vs Execution Time', fontsize=12, fontweight='bold')
-        ax3.grid(True, alpha=0.3)
-
-        # 4. Summary Statistics Table
-        ax4 = axes[1, 1]
-        ax4.axis('off')
+        quantum_wins = sum(1 for r in self.results if r.winner == "Quantum")
+        classical_wins = sum(1 for r in self.results if r.winner == "Classical")
+        draws = sum(1 for r in self.results if r.winner == "Draw")
+        total = len(self.results)
 
         stats_data = [
             ['Metric', 'Value'],
-            ['Total Battles', f'{len(self.results)}'],
-            ['Quantum Wins', f'{sum(1 for r in self.results if r.winner == "Quantum")}'],
-            ['Classical Wins', f'{sum(1 for r in self.results if r.winner == "Classical")}'],
-            ['Draws', f'{sum(1 for r in self.results if r.winner == "Draw")}'],
+            ['Total Battles', f'{total}'],
+            ['Quantum Wins', f'{quantum_wins} ({quantum_wins/total*100:.1f}%)'],
+            ['Classical Wins', f'{classical_wins} ({classical_wins/total*100:.1f}%)'],
+            ['Draws', f'{draws} ({draws/total*100:.1f}%)'],
             ['Avg Turns', f'{np.mean([r.turns for r in self.results]):.2f}'],
-            ['Avg Duration (ms)', f'{np.mean([r.duration_seconds * 1000 for r in self.results]):.2f}'],
-            ['Avg Quantum Survivors', f'{np.mean([r.quantum_survivors for r in self.results]):.2f}'],
-            ['Avg Classical Survivors', f'{np.mean([r.classical_survivors for r in self.results]):.2f}'],
         ]
 
-        table = ax4.table(cellText=stats_data, cellLoc='left', loc='center',
-                         colWidths=[0.6, 0.4])
+        table = ax.table(cellText=stats_data, cellLoc='left', loc='center',
+                         colWidths=[0.55, 0.45])
         table.auto_set_font_size(False)
-        table.set_fontsize(10)
-        table.scale(1, 2)
+        table.set_fontsize(12)
+        table.scale(1, 2.8)
 
-        # Style header row
+        # Style header row with gradient-like effect
         for i in range(2):
-            table[(0, i)].set_facecolor('#4169E1')
-            table[(0, i)].set_text_props(weight='bold', color='white')
+            table[(0, i)].set_facecolor('#1e293b')
+            table[(0, i)].set_text_props(weight='bold', color='white', fontsize=13)
+            table[(0, i)].set_edgecolor('#cbd5e1')
 
-        ax4.set_title('Summary Statistics', fontsize=12, fontweight='bold', pad=20)
+        # Alternate row colors for better readability
+        for i in range(1, len(stats_data)):
+            for j in range(2):
+                if i % 2 == 0:
+                    table[(i, j)].set_facecolor('#f8fafc')
+                else:
+                    table[(i, j)].set_facecolor('#ffffff')
+                table[(i, j)].set_edgecolor('#cbd5e1')
+                table[(i, j)].set_text_props(fontsize=11)
 
-        plt.tight_layout()
-        plt.savefig('battlefield_detailed_statistics.png', dpi=300, bbox_inches='tight')
-        print("Saved detailed statistics plot: battlefield_detailed_statistics.png")
-        plt.close()
+                # Highlight key metrics
+                if 'Quantum Wins' in stats_data[i][0]:
+                    table[(i, j)].set_text_props(color='#3b82f6', weight='bold', fontsize=11)
+                elif 'Classical Wins' in stats_data[i][0]:
+                    table[(i, j)].set_text_props(color='#ef4444', weight='bold', fontsize=11)
+
+        ax.set_title('SUMMARY STATISTICS', fontsize=14, fontweight='bold', pad=20, color='#1e293b')
+
 
     def print_summary_statistics(self):
         """Print detailed summary statistics."""
@@ -559,26 +499,6 @@ class BattlefieldTester:
         print(f"Average Battle Length: {avg_turns:.2f} ± {std_turns:.2f} turns")
         print(f"Shortest Battle: {min(r.turns for r in self.results)} turns")
         print(f"Longest Battle: {max(r.turns for r in self.results)} turns")
-        print()
-
-        avg_duration = np.mean([r.duration_seconds for r in self.results]) * 1000
-        print(f"Average Execution Time: {avg_duration:.2f} ms/battle")
-        print(f"Total Simulation Time: {sum(r.duration_seconds for r in self.results):.2f} seconds")
-        print()
-
-        avg_q_survivors = np.mean([r.quantum_survivors for r in self.results])
-        avg_c_survivors = np.mean([r.classical_survivors for r in self.results])
-        print(f"Average Quantum Survivors: {avg_q_survivors:.2f}")
-        print(f"Average Classical Survivors: {avg_c_survivors:.2f}")
-        print()
-
-        if quantum_wins > 0:
-            avg_q_win_survivors = np.mean([r.quantum_survivors for r in self.results if r.winner == 'Quantum'])
-            print(f"Avg Quantum Survivors (when winning): {avg_q_win_survivors:.2f}")
-
-        if classical_wins > 0:
-            avg_c_win_survivors = np.mean([r.classical_survivors for r in self.results if r.winner == 'Classical'])
-            print(f"Avg Classical Survivors (when winning): {avg_c_win_survivors:.2f}")
 
         print(f"\n{'='*60}\n")
 
@@ -643,9 +563,10 @@ Examples:
     tester.generate_comprehensive_plots()
 
     print("\nTesting complete!")
-    print("Generated files:")
+    print("="*60)
+    print("Generated visualization file:")
     print("  - battlefield_test_results.png")
-    print("  - battlefield_detailed_statistics.png")
+    print("="*60)
 
 
 if __name__ == "__main__":
