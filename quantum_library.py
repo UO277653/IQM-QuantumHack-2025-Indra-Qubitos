@@ -5,10 +5,13 @@ Replace this with actual quantum algorithm implementation.
 """
 
 import random
-from typing import List
+from typing import List, TYPE_CHECKING
 
-from battlefield import Soldier
+import numpy as np
+from itertools import combinations
 
+if TYPE_CHECKING:
+    from battlefield import Soldier
 
 def quantum_random_walk(current_position):
     """
@@ -24,19 +27,53 @@ ALGORITHMS = {
     'random_walk': quantum_random_walk,
 }
 
-def quantum_best_move(current_position, quantum_algorithm):
+def quantum_best_move(soldier: "Soldier", enemies: List["Soldier"], algorithm: str = "quantum_step") -> tuple:
     """
-    Dynamically selects and applies a specified quantum algorithm to determine the best move.
-    """
-    algorithm_func = ALGORITHMS.get(quantum_algorithm)
+    Determine the best move for a soldier using quantum algorithms.
 
-    if algorithm_func:
+    Builds the omega dictionary from H gradient values and uses quantum_step
+    to find the optimal move based on offensive/defensive positioning.
+
+    Args:
+        soldier: The soldier making the move.
+        enemies: List of enemy soldiers on the battlefield.
+        algorithm: Algorithm to use (default: "quantum_step").
+
+    Returns:
+        Tuple (new_x, new_y) with the new position.
+    """
+    if algorithm == "quantum_step":
+        # Calculate H gradients for all 4 cardinal directions
+        h_left = calculate_h_left(soldier, enemies)   # I (Izquierda)
+        h_right = calculate_h_right(soldier, enemies)  # D (Derecha)
+        h_up = calculate_h_up(soldier, enemies)        # + (Arriba)
+        h_down = calculate_h_down(soldier, enemies)    # - (Abajo)
+
+        # Build omega dictionary
+        # Negative gradient = more offensive direction (preferred)
+        # Positive gradient = more vulnerable direction (avoided)
+        omega = {
+            "I": int(h_left),   # Left (x-1)
+            "D": int(h_right),  # Right (x+1)
+            "+": int(h_up),     # Up (y+1)
+            "-": int(h_down)    # Down (y-1)
+        }
+
+        # Call quantum_step with current position and omega
+        new_x, new_y = quantum_step(soldier.x, soldier.y, omega)
+        return (new_x, new_y)
+
+    elif algorithm in ALGORITHMS:
+        # Fallback to legacy algorithms
+        current_position = (soldier.x, soldier.y)
+        algorithm_func = ALGORITHMS[algorithm]
         return algorithm_func(current_position)
+
     else:
-        raise ValueError(f"Unknown algorithm: {quantum_algorithm}. Available algorithms are: {list(ALGORITHMS.keys())}")
+        raise ValueError(f"Unknown algorithm: {algorithm}. Available: {list(ALGORITHMS.keys()) + ['quantum_step']}")
 
 # Calcular ofensiva y vulnerabilidad
-def calculate_offensive_power(soldier: Soldier, enemies: List[Soldier]) -> int:
+def calculate_offensive_power(soldier: "Soldier", enemies: List["Soldier"]) -> int:
     """
     Calculate the offensive power of a soldier towards enemies in range.
 
@@ -53,7 +90,7 @@ def calculate_offensive_power(soldier: Soldier, enemies: List[Soldier]) -> int:
             offensive_power += soldier.strength
     return offensive_power
 
-def calculate_vulnerability(soldier: Soldier, enemies: List[Soldier]) -> float:
+def calculate_vulnerability(soldier: "Soldier", enemies: List["Soldier"]) -> float:
     """
     Calculate the vulnerability of a soldier based on enemies' offensive power.
 
@@ -71,7 +108,7 @@ def calculate_vulnerability(soldier: Soldier, enemies: List[Soldier]) -> float:
     return vulnerability
 
 # Calcular las H
-def calculate_h_value(soldier: Soldier, enemies: List[Soldier]) -> float:
+def calculate_h_value(soldier: "Soldier", enemies: List["Soldier"]) -> float:
     """
     Calculate the h heuristic value for a soldier based on vulnerability vs offensive power.
 
@@ -94,7 +131,7 @@ def calculate_h_value(soldier: Soldier, enemies: List[Soldier]) -> float:
     return vulnerability - offensive
 
 # Calcular h arriba, que es la diferencia de calcular el valor h desplazando el valor de la variable y de nuestro soldado una casilla hacia arriba menos el valor de h sin desplazar ninguna variable.
-def calculate_h_up(soldier: Soldier, enemies: List[Soldier]) -> float:
+def calculate_h_up(soldier: "Soldier", enemies: List["Soldier"]) -> float:
     """
     Calculate the h gradient when moving up (y+1).
 
@@ -109,6 +146,8 @@ def calculate_h_up(soldier: Soldier, enemies: List[Soldier]) -> float:
     Returns:
         Gradient of h in the upward direction.
     """
+    from battlefield import Soldier
+
     # Calculate h at current position
     h_current = calculate_h_value(soldier, enemies)
 
@@ -130,7 +169,7 @@ def calculate_h_up(soldier: Soldier, enemies: List[Soldier]) -> float:
     # Return the difference
     return h_shifted - h_current
 
-def calculate_h_down(soldier: Soldier, enemies: List[Soldier]) -> float:
+def calculate_h_down(soldier: "Soldier", enemies: List["Soldier"]) -> float:
     """
     Calculate the h gradient when moving down (y-1).
 
@@ -143,6 +182,8 @@ def calculate_h_down(soldier: Soldier, enemies: List[Soldier]) -> float:
     Returns:
         Gradient of h in the downward direction.
     """
+    from battlefield import Soldier
+
     h_current = calculate_h_value(soldier, enemies)
 
     soldier_shifted = Soldier(
@@ -159,7 +200,7 @@ def calculate_h_down(soldier: Soldier, enemies: List[Soldier]) -> float:
     h_shifted = calculate_h_value(soldier_shifted, enemies)
     return h_shifted - h_current
 
-def calculate_h_left(soldier: Soldier, enemies: List[Soldier]) -> float:
+def calculate_h_left(soldier: "Soldier", enemies: List["Soldier"]) -> float:
     """
     Calculate the h gradient when moving left (x-1).
 
@@ -172,6 +213,8 @@ def calculate_h_left(soldier: Soldier, enemies: List[Soldier]) -> float:
     Returns:
         Gradient of h in the left direction.
     """
+    from battlefield import Soldier
+
     h_current = calculate_h_value(soldier, enemies)
 
     soldier_shifted = Soldier(
@@ -188,7 +231,7 @@ def calculate_h_left(soldier: Soldier, enemies: List[Soldier]) -> float:
     h_shifted = calculate_h_value(soldier_shifted, enemies)
     return h_shifted - h_current
 
-def calculate_h_right(soldier: Soldier, enemies: List[Soldier]) -> float:
+def calculate_h_right(soldier: "Soldier", enemies: List["Soldier"]) -> float:
     """
     Calculate the h gradient when moving right (x+1).
 
@@ -201,6 +244,8 @@ def calculate_h_right(soldier: Soldier, enemies: List[Soldier]) -> float:
     Returns:
         Gradient of h in the right direction.
     """
+    from battlefield import Soldier
+
     h_current = calculate_h_value(soldier, enemies)
 
     soldier_shifted = Soldier(
@@ -217,7 +262,7 @@ def calculate_h_right(soldier: Soldier, enemies: List[Soldier]) -> float:
     h_shifted = calculate_h_value(soldier_shifted, enemies)
     return h_shifted - h_current
 
-def calculate_h_right_up(soldier: Soldier, enemies: List[Soldier]) -> float:
+def calculate_h_right_up(soldier: "Soldier", enemies: List["Soldier"]) -> float:
     """
     Calculate the h gradient when moving diagonally right-up (x+1, y+1).
 
@@ -230,6 +275,8 @@ def calculate_h_right_up(soldier: Soldier, enemies: List[Soldier]) -> float:
     Returns:
         Gradient of h in the right-up diagonal direction.
     """
+    from battlefield import Soldier
+
     h_current = calculate_h_value(soldier, enemies)
 
     soldier_shifted = Soldier(
@@ -246,7 +293,7 @@ def calculate_h_right_up(soldier: Soldier, enemies: List[Soldier]) -> float:
     h_shifted = calculate_h_value(soldier_shifted, enemies)
     return h_shifted - h_current
 
-def calculate_h_right_down(soldier: Soldier, enemies: List[Soldier]) -> float:
+def calculate_h_right_down(soldier: "Soldier", enemies: List["Soldier"]) -> float:
     """
     Calculate the h gradient when moving diagonally right-down (x+1, y-1).
 
@@ -259,6 +306,8 @@ def calculate_h_right_down(soldier: Soldier, enemies: List[Soldier]) -> float:
     Returns:
         Gradient of h in the right-down diagonal direction.
     """
+    from battlefield import Soldier
+
     h_current = calculate_h_value(soldier, enemies)
 
     soldier_shifted = Soldier(
@@ -275,7 +324,7 @@ def calculate_h_right_down(soldier: Soldier, enemies: List[Soldier]) -> float:
     h_shifted = calculate_h_value(soldier_shifted, enemies)
     return h_shifted - h_current
 
-def calculate_h_left_up(soldier: Soldier, enemies: List[Soldier]) -> float:
+def calculate_h_left_up(soldier: "Soldier", enemies: List["Soldier"]) -> float:
     """
     Calculate the h gradient when moving diagonally left-up (x-1, y+1).
 
@@ -288,6 +337,8 @@ def calculate_h_left_up(soldier: Soldier, enemies: List[Soldier]) -> float:
     Returns:
         Gradient of h in the left-up diagonal direction.
     """
+    from battlefield import Soldier
+
     h_current = calculate_h_value(soldier, enemies)
 
     soldier_shifted = Soldier(
@@ -304,7 +355,7 @@ def calculate_h_left_up(soldier: Soldier, enemies: List[Soldier]) -> float:
     h_shifted = calculate_h_value(soldier_shifted, enemies)
     return h_shifted - h_current
 
-def calculate_h_left_down(soldier: Soldier, enemies: List[Soldier]) -> float:
+def calculate_h_left_down(soldier: "Soldier", enemies: List["Soldier"]) -> float:
     """
     Calculate the h gradient when moving diagonally left-down (x-1, y-1).
 
@@ -317,6 +368,8 @@ def calculate_h_left_down(soldier: Soldier, enemies: List[Soldier]) -> float:
     Returns:
         Gradient of h in the left-down diagonal direction.
     """
+    from battlefield import Soldier
+
     h_current = calculate_h_value(soldier, enemies)
 
     soldier_shifted = Soldier(
@@ -332,3 +385,130 @@ def calculate_h_left_down(soldier: Soldier, enemies: List[Soldier]) -> float:
 
     h_shifted = calculate_h_value(soldier_shifted, enemies)
     return h_shifted - h_current
+
+# ----------------------------
+# Pauli matrices
+# ----------------------------
+I2 = np.eye(2, dtype=complex)
+X  = np.array([[0, 1],
+               [1, 0]], dtype=complex)
+Z  = np.array([[1,  0],
+               [0, -1]], dtype=complex)
+
+def kron_n(ops):
+    out = ops[0]
+    for op in ops[1:]:
+        out = np.kron(out, op)
+    return out
+
+def one_body(n, i, op):
+    ops = [I2] * n
+    ops[i] = op
+    return kron_n(ops)
+
+def two_body(n, i, j, op_i, op_j):
+    ops = [I2] * n
+    ops[i] = op_i
+    ops[j] = op_j
+    return kron_n(ops)
+
+def projector_11(n, i, j):
+    """
+    Projector onto |11> on qubits (i,j):
+    P_11 = (1/4)(I - Z_i - Z_j + Z_i Z_j)
+    Penalizes ONLY the |11> state in the computational basis.
+    """
+    dim = 2**n
+    I_full = np.eye(dim, dtype=complex)
+    Zi = one_body(n, i, Z)
+    Zj = one_body(n, j, Z)
+    ZiZj = two_body(n, i, j, Z, Z)
+    return 0.25 * (I_full - Zi - Zj + ZiZj)
+
+# =========================================================
+# MAIN FUNCTION YOU ASKED FOR
+# =========================================================
+def quantum_step(x, y, omega, seed=42, K_ID=1000, K_pm=1000):
+    """
+    Perform one quantum decision step.
+
+    Inputs:
+      x, y   : current position (ints)
+      omega  : dict { "I","D","+","-" : int }
+      seed   : RNG seed for J couplings
+      K_ID   : penalty for I=D=1
+      K_pm   : penalty for +=-=1
+
+    Returns:
+      new_x, new_y
+    """
+
+    # ----------------------------
+    # Spin labels and indexing
+    # ----------------------------
+    labels = ["I", "D", "+", "-"]
+    n = len(labels)
+    idx = {lab: i for i, lab in enumerate(labels)}
+
+    # ----------------------------
+    # Random XX couplings
+    # ----------------------------
+    rng = np.random.default_rng(seed)
+    J = {}
+    for a, b in combinations(labels, 2):
+        J[(a, b)] = 0
+
+    # ----------------------------
+    # Build Hamiltonian
+    # ----------------------------
+    dim = 2**n
+    H = np.zeros((dim, dim), dtype=complex)
+
+    # Z fields
+    for a in labels:
+        H += omega[a] * one_body(n, idx[a], Z)
+
+    # XX interactions
+    for a, b in combinations(labels, 2):
+        ia, ib = idx[a], idx[b]
+        H += J[(a, b)] * two_body(n, ia, ib, X, X)
+
+    # Constraint penalties
+    H += K_ID * projector_11(n, idx["I"], idx["D"])
+    H += K_pm * projector_11(n, idx["+"], idx["-"])
+
+    # ----------------------------
+    # Diagonalize
+    # ----------------------------
+    evals, evecs = np.linalg.eigh(H)
+    psi0 = evecs[:, 0]
+
+    # ----------------------------
+    # MOST LIKELY BITSTRING (MAP)
+    # ----------------------------
+    probs = np.abs(psi0)**2
+    k_map = int(np.argmax(probs))
+    bit_map = format(k_map, "04b")  # |I D + ->
+    p_map = probs[k_map]
+
+    # ----------------------------
+    # INTERPRET BITSTRING AS (x, y) MOVE
+    # ----------------------------
+    I_bit, D_bit, plus_bit, minus_bit = map(int, bit_map)
+
+    new_x, new_y = x, y
+    if I_bit == 1:
+        new_x -= 1
+    if D_bit == 1:
+        new_x += 1
+    if plus_bit == 1:
+        new_y += 1
+    if minus_bit == 1:
+        new_y -= 1
+
+    # Optional debug output
+    #print("\nQuantum step:")
+    #print(f"  MAP bitstring = |{bit_map}>  (p = {p_map:.6f})")
+    #print(f"  (x, y) : ({x}, {y}) → ({new_x}, {new_y})")
+
+    return new_x, new_y
