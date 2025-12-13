@@ -17,8 +17,11 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 import matplotlib
-matplotlib.use('Agg')  # Use non-interactive backend
+# matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
+
+# Disable toolbar in interactive window
+matplotlib.rcParams['toolbar'] = 'None'
 import seaborn as sns
 import numpy as np
 import random
@@ -307,8 +310,11 @@ class BattlefieldTester:
         self._plot_summary_statistics_table(ax4)
 
         plt.tight_layout(rect=[0, 0.02, 1, 0.96])
+        plt.subplots_adjust(hspace=0.35, wspace=0.25)  # Add more space between subplots
         plt.savefig('battlefield_test_results.png', dpi=300, bbox_inches='tight', facecolor='#f8f9fa')
         print("Saved comprehensive plot: battlefield_test_results.png")
+        print("Displaying plot...")
+        plt.show()  # Show the plot on screen
         plt.close()
 
     def _plot_victory_distribution(self, ax):
