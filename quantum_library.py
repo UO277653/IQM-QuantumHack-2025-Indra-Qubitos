@@ -27,7 +27,7 @@ ALGORITHMS = {
     'random_walk': quantum_random_walk,
 }
 
-def quantum_best_move(soldier: "Soldier", enemies: List["Soldier"], algorithm: str = "quantum_step") -> tuple:
+def quantum_best_move(soldier: "Soldier", enemies: List["Soldier"], algorithm: str = "quantum_step", teammates: List["Soldier"] = None) -> tuple:
     """
     Determine the best move for a soldier using quantum algorithms.
 
@@ -38,16 +38,17 @@ def quantum_best_move(soldier: "Soldier", enemies: List["Soldier"], algorithm: s
         soldier: The soldier making the move.
         enemies: List of enemy soldiers on the battlefield.
         algorithm: Algorithm to use (default: "quantum_step").
+        teammates: List of ally soldiers on the battlefield (optional).
 
     Returns:
         Tuple (new_x, new_y) with the new position.
     """
     if algorithm == "quantum_step":
         # Calculate H gradients for all 4 cardinal directions
-        h_left = calculate_h_left(soldier, enemies)   # I (Izquierda)
-        h_right = calculate_h_right(soldier, enemies)  # D (Derecha)
-        h_up = calculate_h_up(soldier, enemies)        # + (Arriba)
-        h_down = calculate_h_down(soldier, enemies)    # - (Abajo)
+        h_left = calculate_h_left(soldier, enemies, teammates)   # I (Izquierda)
+        h_right = calculate_h_right(soldier, enemies, teammates)  # D (Derecha)
+        h_up = calculate_h_up(soldier, enemies, teammates)        # + (Arriba)
+        h_down = calculate_h_down(soldier, enemies, teammates)    # - (Abajo)
 
         # Build omega dictionary
         # Negative gradient = more offensive direction (preferred)
@@ -122,7 +123,7 @@ def calculate_vulnerability(soldier: "Soldier", enemies: List["Soldier"]) -> flo
     return vulnerability
 
 # Calcular las H
-def calculate_h_value(soldier: "Soldier", enemies: List["Soldier"]) -> float:
+def calculate_h_value(soldier: "Soldier", enemies: List["Soldier"], teammates: List["Soldier"] = None) -> float:
     """
     Calculate the h heuristic value for a soldier based on vulnerability vs offensive power.
 
@@ -132,6 +133,7 @@ def calculate_h_value(soldier: "Soldier", enemies: List["Soldier"]) -> float:
     Args:
         soldier: The soldier being evaluated.
         enemies: List of enemy soldiers on the battlefield.
+        teammates: List of ally soldiers on the battlefield (optional).
 
     Returns:
         Heuristic value h (higher = more vulnerable, lower = more offensive).
@@ -139,13 +141,26 @@ def calculate_h_value(soldier: "Soldier", enemies: List["Soldier"]) -> float:
     offensive = calculate_offensive_power(soldier, enemies)
     vulnerability = calculate_vulnerability(soldier, enemies)
 
-    # H = vulnerability - offensive_power
-    # Higher vulnerability and lower offensive power -> higher h
-    # Lower vulnerability and higher offensive power -> lower h
-    return 2 * offensive - vulnerability
+    # si somos menos soldados defensivo, retornamos offensive - (unidades de diferencia) * vulnerability
+    # si mas soldados ofensivo, retornamos (unidades de diferencia) * offensive - vulnerability
+
+    if teammates is not None:
+        num_allies = len(teammates)
+        num_enemies = len(enemies)
+        unit_difference = num_allies - num_enemies
+
+        if unit_difference < 0:
+            # Menos soldados (defensivo)
+            return offensive - abs(unit_difference) * vulnerability
+        else:
+            # Más soldados o igual (ofensivo)
+            return unit_difference * offensive - vulnerability
+    else:
+        # Fallback a la lógica anterior si no hay información de teammates
+        return 2 * offensive - vulnerability
 
 # Calcular h arriba, que es la diferencia de calcular el valor h desplazando el valor de la variable y de nuestro soldado una casilla hacia arriba menos el valor de h sin desplazar ninguna variable.
-def calculate_h_up(soldier: "Soldier", enemies: List["Soldier"]) -> float:
+def calculate_h_up(soldier: "Soldier", enemies: List["Soldier"], teammates: List["Soldier"] = None) -> float:
     """
     Calculate the h gradient when moving up (y+1).
 
@@ -156,6 +171,7 @@ def calculate_h_up(soldier: "Soldier", enemies: List["Soldier"]) -> float:
     Args:
         soldier: The soldier being evaluated.
         enemies: List of enemy soldiers on the battlefield.
+        teammates: List of ally soldiers on the battlefield (optional).
 
     Returns:
         Gradient of h in the upward direction.
@@ -163,7 +179,7 @@ def calculate_h_up(soldier: "Soldier", enemies: List["Soldier"]) -> float:
     from battlefield import Soldier
 
     # Calculate h at current position
-    h_current = calculate_h_value(soldier, enemies)
+    h_current = calculate_h_value(soldier, enemies, teammates)
 
     # Create a temporary soldier with y shifted up by 1
     soldier_shifted = Soldier(
@@ -178,12 +194,12 @@ def calculate_h_up(soldier: "Soldier", enemies: List["Soldier"]) -> float:
     )
 
     # Calculate h at shifted position
-    h_shifted = calculate_h_value(soldier_shifted, enemies)
+    h_shifted = calculate_h_value(soldier_shifted, enemies, teammates)
 
     # Return the difference
     return h_shifted - h_current
 
-def calculate_h_down(soldier: "Soldier", enemies: List["Soldier"]) -> float:
+def calculate_h_down(soldier: "Soldier", enemies: List["Soldier"], teammates: List["Soldier"] = None) -> float:
     """
     Calculate the h gradient when moving down (y-1).
 
@@ -192,13 +208,14 @@ def calculate_h_down(soldier: "Soldier", enemies: List["Soldier"]) -> float:
     Args:
         soldier: The soldier being evaluated.
         enemies: List of enemy soldiers on the battlefield.
+        teammates: List of ally soldiers on the battlefield (optional).
 
     Returns:
         Gradient of h in the downward direction.
     """
     from battlefield import Soldier
 
-    h_current = calculate_h_value(soldier, enemies)
+    h_current = calculate_h_value(soldier, enemies, teammates)
 
     soldier_shifted = Soldier(
         x=soldier.x,
@@ -211,10 +228,10 @@ def calculate_h_down(soldier: "Soldier", enemies: List["Soldier"]) -> float:
         max_health=soldier.max_health
     )
 
-    h_shifted = calculate_h_value(soldier_shifted, enemies)
+    h_shifted = calculate_h_value(soldier_shifted, enemies, teammates)
     return h_shifted - h_current
 
-def calculate_h_left(soldier: "Soldier", enemies: List["Soldier"]) -> float:
+def calculate_h_left(soldier: "Soldier", enemies: List["Soldier"], teammates: List["Soldier"] = None) -> float:
     """
     Calculate the h gradient when moving left (x-1).
 
@@ -223,13 +240,14 @@ def calculate_h_left(soldier: "Soldier", enemies: List["Soldier"]) -> float:
     Args:
         soldier: The soldier being evaluated.
         enemies: List of enemy soldiers on the battlefield.
+        teammates: List of ally soldiers on the battlefield (optional).
 
     Returns:
         Gradient of h in the left direction.
     """
     from battlefield import Soldier
 
-    h_current = calculate_h_value(soldier, enemies)
+    h_current = calculate_h_value(soldier, enemies, teammates)
 
     soldier_shifted = Soldier(
         x=soldier.x - 1,
@@ -242,10 +260,10 @@ def calculate_h_left(soldier: "Soldier", enemies: List["Soldier"]) -> float:
         max_health=soldier.max_health
     )
 
-    h_shifted = calculate_h_value(soldier_shifted, enemies)
+    h_shifted = calculate_h_value(soldier_shifted, enemies, teammates)
     return h_shifted - h_current
 
-def calculate_h_right(soldier: "Soldier", enemies: List["Soldier"]) -> float:
+def calculate_h_right(soldier: "Soldier", enemies: List["Soldier"], teammates: List["Soldier"] = None) -> float:
     """
     Calculate the h gradient when moving right (x+1).
 
@@ -254,13 +272,14 @@ def calculate_h_right(soldier: "Soldier", enemies: List["Soldier"]) -> float:
     Args:
         soldier: The soldier being evaluated.
         enemies: List of enemy soldiers on the battlefield.
+        teammates: List of ally soldiers on the battlefield (optional).
 
     Returns:
         Gradient of h in the right direction.
     """
     from battlefield import Soldier
 
-    h_current = calculate_h_value(soldier, enemies)
+    h_current = calculate_h_value(soldier, enemies, teammates)
 
     soldier_shifted = Soldier(
         x=soldier.x + 1,
@@ -273,7 +292,7 @@ def calculate_h_right(soldier: "Soldier", enemies: List["Soldier"]) -> float:
         max_health=soldier.max_health
     )
 
-    h_shifted = calculate_h_value(soldier_shifted, enemies)
+    h_shifted = calculate_h_value(soldier_shifted, enemies, teammates)
     return h_shifted - h_current
 
 def calculate_h_right_up(soldier: "Soldier", enemies: List["Soldier"]) -> float:

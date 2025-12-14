@@ -189,10 +189,11 @@ class QuantumBattlefield:
                 continue
 
             if soldier.team == "Quantum":
-                # Get list of enemy soldiers
+                # Get list of enemy soldiers and teammates
                 enemies = [s for s in self.soldiers if s.team != soldier.team and s.is_alive()]
+                teammates = [s for s in self.soldiers if s.team == soldier.team and s.is_alive() and s is not soldier]
                 # Use quantum algorithm with H gradients
-                best_move = qlib.quantum_best_move(soldier, enemies, quantum_algorithm)
+                best_move = qlib.quantum_best_move(soldier, enemies, quantum_algorithm, teammates)
             else:
                 # the classical team moves using random walks
                 best_move = (random.randint(-1, 1), random.randint(-1, 1))
