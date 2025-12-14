@@ -39,7 +39,26 @@ class Soldier:
     def take_damage(self, damage: int):
         """Reduce health by damage amount. Health stays between 0 and 3."""
         self.health = max(0, min(3, self.health - damage))
-    
+
+    def find_weakest_to_attack(self, all_soldiers: List['Soldier']) -> Optional['Soldier']:
+        """
+        Find the weakest enemy in range to attack.
+
+        Args:
+            all_soldiers: List of all soldiers on the battlefield
+
+        Returns:
+            The enemy with lowest health in range, or None if no enemies in range
+        """
+        # Find enemies in range that are alive
+        targets = [s for s in all_soldiers if self.can_fight(s) and s.is_alive()]
+
+        if not targets:
+            return None
+
+        # Return the weakest enemy (lowest current health)
+        return min(targets, key=lambda s: s.health)
+
     def attack(self, other: 'Soldier') -> int:
         """
         Attack another soldier and return damage dealt.

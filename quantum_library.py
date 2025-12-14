@@ -84,10 +84,16 @@ def calculate_offensive_power(soldier: "Soldier", enemies: List["Soldier"]) -> i
     Returns:
         Total offensive power of the soldier.
     """
-    offensive_power = 0
-    for enemy in enemies:
-        if soldier.can_fight(enemy):
-            offensive_power += soldier.strength
+    offensive_power = -1
+
+    weakest = soldier.find_weakest_to_attack(enemies)
+
+    # si encuentra weakest, compara si el ataque del soldado es suficiente para matar al mas debil, en ese caso devuelve 1, si no -1
+    if weakest:
+        if soldier.strength >= weakest.health:
+            offensive_power = 1  # Can kill the weakest enemy
+        # else: offensive_power stays -1 (cannot kill)
+
     return offensive_power
 
 def calculate_vulnerability(soldier: "Soldier", enemies: List["Soldier"]) -> float:
@@ -101,10 +107,18 @@ def calculate_vulnerability(soldier: "Soldier", enemies: List["Soldier"]) -> flo
     Returns:
         Total vulnerability of the soldier.
     """
-    vulnerability = 0
+    vulnerability = -1
+
+    # si la suma de las fuerzas de los enemigos es mayor que 2 veces tu vida, devuelve 1, si no devuelve -1
+    total_enemy_strength = 0
     for enemy in enemies:
         if enemy.can_fight(soldier):
-            vulnerability += enemy.strength
+            total_enemy_strength += enemy.strength
+
+    if total_enemy_strength > 2 * soldier.health:
+        vulnerability = 1  # Very vulnerable (enemies can overwhelm)
+    # else: vulnerability stays -1 (not critically vulnerable)
+
     return vulnerability
 
 # Calcular las H
@@ -128,7 +142,7 @@ def calculate_h_value(soldier: "Soldier", enemies: List["Soldier"]) -> float:
     # H = vulnerability - offensive_power
     # Higher vulnerability and lower offensive power -> higher h
     # Lower vulnerability and higher offensive power -> lower h
-    return  vulnerability - offensive
+    return 2 * offensive - vulnerability
 
 # Calcular h arriba, que es la diferencia de calcular el valor h desplazando el valor de la variable y de nuestro soldado una casilla hacia arriba menos el valor de h sin desplazar ninguna variable.
 def calculate_h_up(soldier: "Soldier", enemies: List["Soldier"]) -> float:
