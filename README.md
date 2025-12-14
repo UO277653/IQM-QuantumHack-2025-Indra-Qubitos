@@ -31,12 +31,14 @@ Classical heuristics provide an interpretable layer that grounds the quantum mod
 
 This function evaluates whether a unit can eliminate the weakest enemy within its attack range.
 
+```latex
 [
 P_{\text{offensive}} = \begin{cases}
 1 & \text{if the unit can kill the weakest enemy in range} \
 -1 & \text{otherwise}
 \end{cases}
 ]
+```
 
 **Interpretation**:
 
@@ -53,12 +55,14 @@ This binary formulation keeps the heuristic simple and robust, avoiding overfitt
 
 This function measures how exposed a unit is by summing the strength of all enemies capable of attacking it.
 
+```latex
 [
 V_{\text{unit}} = \begin{cases}
 1 & \text{if } \sum \text{enemy strength} > 2 \cdot \text{unit health} \
 -1 & \text{otherwise}
 \end{cases}
 ]
+```
 
 **Interpretation**:
 
@@ -91,9 +95,11 @@ This adaptive behavior allows the same unit logic to work across very different 
 
 For each possible movement direction (left, right, up, down), a **finite-difference gradient** is computed:
 
+```latex
 [
 \Delta h = h(\text{shifted position}) - h(\text{current position})
 ]
+```
 
 **Interpretation**:
 
@@ -124,14 +130,20 @@ Each variable is treated as a qubit, resulting in a 4-qubit system.
 The Hamiltonian is composed of three terms:
 
 1. **Local Z-fields** (heuristic bias):
+
+```latex
    [
    H_Z = \sum_a \omega_a Z_a
    ]
+```
 
 2. **Interaction terms** (currently disabled or extensible):
+
+```latex
    [
    H_{XX} = \sum_{a<b} J_{ab} X_a X_b
    ]
+```
 
 3. **Hard Constraint Hamiltonian**
 
@@ -139,8 +151,11 @@ Hard movement constraints are enforced by adding **energy penalty terms** to the
 
 For two qubits \( i, j \), the projector onto the forbidden state \(|11\rangle\) in the computational basis is given by:
 
+```latex
 \[
-P^{(i,j)}_{11} = |11\rangle\langle 11| = \frac{1}{4}\left(\mathbb{I}- Z_i- Z_j+ Z_i Z_j\right)\]
+P^{(i,j)}_{11} = |11\rangle\langle 11| = \frac{1}{4}\left(\mathbb{I}- Z_i- Z_j+ Z_i Z_j\right)
+\]
+```
 
 where \( Z_i \) and \( Z_j \) are Pauli-\(Z\) operators acting on qubits \( i \) and \( j \), and \( \mathbb{I} \) is the identity operator.
 
@@ -151,15 +166,19 @@ In this model, two hard constraints are imposed:
 
 The corresponding constraint Hamiltonian is:
 
+```latex
 \[
 H_{\text{constraints}} = K_{ID}\, P^{(I,D)}_{11} + K_{+-}\, P^{(+,-)}_{11}
 \]
+```
 
 or, written explicitly,
 
+```latex
 \[
 H_{\text{constraints}} = \frac{K_{ID}}{4}\left(\mathbb{I} - Z_I- Z_D+ Z_I Z_D\right)+\frac{K_{+-}}{4}\left(\mathbb{I}- Z_+- Z_-+ Z_+ Z_-\right)
 \]
+```
 
 Here, \( K_{ID} \) and \( K_{+-} \) are large positive penalty coefficients. In the regime \( K \gg |\omega| \), forbidden configurations are energetically suppressed and do not appear in the ground state, ensuring logical consistency of the selected action.
 
@@ -224,3 +243,25 @@ Possible extensions include:
 This library demonstrates how **quantum-inspired optimization** can be combined with **interpretable classical heuristics** to produce flexible, explainable, and scalable decision-making systems for games or simulations.
 
 It is designed as a conceptual and experimental framework, suitable for hackathons, research prototypes, and future quantum-enhanced AI systems.
+
+---
+
+## **9. Project File Structure**
+
+The project is organized to clearly separate the main library, configuration, version history, and simulation tools:
+
+```text
+quantum_library.py        # Main library implementing quantum-inspired decision making (explained in the accompanying notebook)
+QuantumConfig.md          # Configuration guide for future extensions to model team interactions and obtain ground states
+versions_battlefield/     # Directory containing historical versions of the project as it evolved
+battlefield_tester.py     # Simulation pipeline that runs battlefield scenarios and generates a dashboard to visualize results
+```
+
+**File and folder descriptions:**
+
+* **quantum_library.py**: Core library implementing heuristics, gradient calculations, and quantum-inspired movement decisions.
+* **QuantumConfig.md**: Guide for configuring the Hamiltonian and QUBO setup for potential future extensions to handle inter-unit interactions.
+* **versions_battlefield/**: Contains previous project versions to track changes, improvements, and evolution over time.
+* **battlefield_tester.py**: Provides the simulation pipeline to execute battlefield scenarios, generating an interactive dashboard to analyze results.
+
+This structure ensures **clarity, maintainability, and extensibility**, allowing future integration of new features such as **team synergy interactions**.
