@@ -32,12 +32,10 @@ Classical heuristics provide an interpretable layer that grounds the quantum mod
 This function evaluates whether a unit can eliminate the weakest enemy within its attack range.
 
 $$
-[
 P_{\text{offensive}} = \begin{cases}
 1 & \text{if the unit can kill the weakest enemy in range} \
 -1 & \text{otherwise}
 \end{cases}
-]
 $$
 
 **Interpretation**:
@@ -56,13 +54,10 @@ This binary formulation keeps the heuristic simple and robust, avoiding overfitt
 This function measures how exposed a unit is by summing the strength of all enemies capable of attacking it.
 
 $$
-[
 V_{\text{unit}} = \begin{cases}
 1 & \text{if } \sum \text{enemy strength} > 2 \cdot \text{unit health} \
 -1 & \text{otherwise}
 \end{cases}
-]
-
 $$
 
 **Interpretation**:
@@ -97,9 +92,7 @@ This adaptive behavior allows the same unit logic to work across very different 
 For each possible movement direction (left, right, up, down), a **finite-difference gradient** is computed:
 
 $$
-[
 \Delta h = h(\text{shifted position}) - h(\text{current position})
-]
 $$
 
 **Interpretation**:
@@ -111,7 +104,7 @@ These gradients form the input parameters (`omega`) for the quantum-inspired dec
 
 ---
 
-## **5. Quantum-Inspired Decision Model**
+## **5. Quantum Decision Model**
 
 ### **5.1 Encoding Movements as Qubits**
 
@@ -133,18 +126,13 @@ The Hamiltonian is composed of three terms:
 1. **Local Z-fields** (heuristic bias):
 
 $$
-   [
-   H_Z = \sum_a \omega_a Z_a
-   ]
+   H_Z = \sum_a h_a Z_a
 $$
 
 2. **Interaction terms** (currently disabled or extensible):
 
 $$
-   [
    H_{XX} = \sum_{a<b} J_{ab} X_a X_b
-   ]
-
 $$
 
 3. **Hard Constraint Hamiltonian**
@@ -154,9 +142,7 @@ Hard movement constraints are enforced by adding **energy penalty terms** to the
 For two qubits \( i, j \), the projector onto the forbidden state \(|11\rangle\) in the computational basis is given by:
 
 $$
-\[
 P^{(i,j)}_{11} = |11\rangle\langle 11| = \frac{1}{4}\left(\mathbb{I}- Z_i- Z_j+ Z_i Z_j\right)
-\]
 $$
 
 where \( Z_i \) and \( Z_j \) are Pauli-\(Z\) operators acting on qubits \( i \) and \( j \), and \( \mathbb{I} \) is the identity operator.
@@ -169,17 +155,13 @@ In this model, two hard constraints are imposed:
 The corresponding constraint Hamiltonian is:
 
 $$
-\[
 H_{\text{constraints}} = K_{ID}\, P^{(I,D)}_{11} + K_{+-}\, P^{(+,-)}_{11}
-\]
 $$
 
 or, written explicitly,
 
 $$
-\[
 H_{\text{constraints}} = \frac{K_{ID}}{4}\left(\mathbb{I} - Z_I- Z_D+ Z_I Z_D\right)+\frac{K_{+-}}{4}\left(\mathbb{I}- Z_+- Z_-+ Z_+ Z_-\right)
-\]
 $$
 
 Here, \( K_{ID} \) and \( K_{+-} \) are large positive penalty coefficients. In the regime \( K \gg |\omega| \), forbidden configurations are energetically suppressed and do not appear in the ground state, ensuring logical consistency of the selected action.
@@ -196,23 +178,7 @@ This mimics a quantum annealing or QUBO-style optimization process. In future ex
 
 ---
 
-## **6. Interpretation and Justification**
-
-### **Why a Quantum-Inspired Approach?**
-
-* Allows **global optimization** instead of greedy local rules.
-* Naturally incorporates **constraints** as energy penalties.
-* Produces a probabilistic landscape, not just a single deterministic score.
-* Bridges classical AI heuristics with modern quantum optimization ideas.
-
-Even though the simulation runs on classical hardware, the formulation is directly compatible with:
-
-* Quantum annealers.
-* Variational quantum algorithms (VQE, QAOA).
-
----
-
-## **7. Scalability and Extensibility**
+## **6. Scalability and Extensibility**
 
 ### **Scalability**
 
@@ -223,6 +189,7 @@ Key scalability properties:
 * **Constant qubit count per unit**: each agent always solves the same small quantum optimization problem, making the per-decision cost bounded and predictable.
 * **Linear scaling in the number of units**: total computational cost scales with the number of agents, not with the size of the quantum state.
 * **Local decision-making**: each Hamiltonian is constructed from local information (nearby enemies and allies), avoiding global state explosion.
+* **Classical optimisation**: Potential optimization of classical heuristic functions using standard classical optimization techniques to improve decision accuracy and performance.
 
 This makes the approach suitable for large-scale simulations, where many agents act simultaneously, each solving a small and tractable optimization problem.
 
@@ -240,7 +207,7 @@ Possible extensions include:
 
 ---
 
-## **8. Summary**
+## **7. Summary**
 
 This library demonstrates how **quantum-inspired optimization** can be combined with **interpretable classical heuristics** to produce flexible, explainable, and scalable decision-making systems for games or simulations.
 
@@ -248,7 +215,7 @@ It is designed as a conceptual and experimental framework, suitable for hackatho
 
 ---
 
-## **9. Project File Structure**
+## **8. Project File Structure**
 
 The project is organized to clearly separate the main library, configuration, version history, and simulation tools:
 
