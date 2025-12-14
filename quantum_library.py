@@ -439,7 +439,7 @@ def calculate_h_left_down(soldier: "Soldier", enemies: List["Soldier"]) -> float
 # CONFIGURATION: Choose quantum algorithm
 # =========================================================
 # Set this to "qaoa" or "exact" to switch between methods
-QUANTUM_METHOD = "qaoa"  # Options: "qaoa" or "exact"
+QUANTUM_METHOD = "exact"  # Options: "qaoa" or "exact"
 
 # QAOA parameters (only used if QUANTUM_METHOD = "qaoa")
 QAOA_P = 1              # QAOA depth (layers)
