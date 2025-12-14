@@ -180,7 +180,6 @@ $$
 \[
 H_{\text{constraints}} = \frac{K_{ID}}{4}\left(\mathbb{I} - Z_I- Z_D+ Z_I Z_D\right)+\frac{K_{+-}}{4}\left(\mathbb{I}- Z_+- Z_-+ Z_+ Z_-\right)
 \]
-
 $$
 
 Here, \( K_{ID} \) and \( K_{+-} \) are large positive penalty coefficients. In the regime \( K \gg |\omega| \), forbidden configurations are energetically suppressed and do not appear in the ground state, ensuring logical consistency of the selected action.
