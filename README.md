@@ -69,7 +69,7 @@ The factor of `2` acts as a conservative safety margin, discouraging suicidal po
 
 ---
 
-## **3. Heuristic Energy Function (h-value)**
+## **2.3 Heuristic Energy Function (h-value)**
 
 ### **`calculate_h_value`**
 
@@ -87,7 +87,7 @@ This adaptive behavior allows the same unit logic to work across very different 
 
 ---
 
-## **4. Spatial Gradients**
+## **2.4 Spatial Gradients**
 
 For each possible movement direction (left, right, up, down), a **finite-difference gradient** is computed:
 
@@ -104,9 +104,9 @@ These gradients form the input parameters (`omega`) for the quantum-inspired dec
 
 ---
 
-## **5. Quantum Decision Model**
+## **3. Quantum Decision Model**
 
-### **5.1 Encoding Movements as Qubits**
+### **3.1 Encoding Movements as Qubits**
 
 Each possible movement direction is mapped to a binary variable:
 
@@ -119,23 +119,23 @@ Each variable is treated as a qubit, resulting in a 4-qubit system.
 
 ---
 
-### **5.2 Hamiltonian Construction**
+### **3.2 Hamiltonian Construction**
 
 The Hamiltonian is composed of three terms:
 
-1. **Local Z-fields** (heuristic bias):
+3.2.1. **Local Z-fields** (heuristic bias):
 
 $$
    H_Z = \sum_a h_a Z_a
 $$
 
-2. **Interaction terms** (currently disabled or extensible):
+3.2.2. **Interaction terms** (currently disabled or extensible):
 
 $$
    H_{XX} = \sum_{a < b} J_{ab} X_{a} X_{b}
 $$
 
-3. **Hard Constraint Hamiltonian**
+3.2.3. **Hard Constraint Hamiltonian**
 
 Hard movement constraints are enforced by adding **energy penalty terms** to the Hamiltonian. These terms penalize forbidden action combinations by projecting onto invalid quantum states.
 
@@ -168,7 +168,7 @@ Here, \( K_{ID} \) and \( K_{+-} \) are large positive penalty coefficients. In 
 
 ---
 
-### **5.3 Ground State Selection**
+### **3.3 Ground State Selection**
 
 The Hamiltonian is diagonalized, and the **ground state** is interpreted as a probability distribution over all movement combinations.
 
@@ -178,7 +178,7 @@ This mimics a quantum annealing or QUBO-style optimization process. In future ex
 
 ---
 
-## **6. Scalability and Extensibility**
+## **4. Scalability and Extensibility**
 
 ### **Scalability**
 
@@ -207,7 +207,7 @@ Possible extensions include:
 
 ---
 
-## **7. Summary**
+## **5. Summary**
 
 This library demonstrates how **quantum-inspired optimization** can be combined with **interpretable classical heuristics** to produce flexible, explainable, and scalable decision-making systems for games or simulations.
 
@@ -215,7 +215,7 @@ It is designed as a conceptual and experimental framework, suitable for hackatho
 
 ---
 
-## **8. Project File Structure**
+## **6. Project File Structure**
 
 The project is organized to clearly separate the main library, configuration, version history, and simulation tools:
 
