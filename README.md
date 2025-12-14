@@ -57,7 +57,7 @@ This function measures how exposed a unit is by summing the strength of all enem
 $$
 V_{\text{soldado}} =
 \begin{cases}
-1, & \text{if total_enemy_strength > 2 * health} \\
+1, & \text{if total enemy strength $> 2 \cdot$ health} \\
 -1, & \text{otherwise}
 \end{cases}
 $$
