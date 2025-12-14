@@ -171,7 +171,7 @@ The Hamiltonian is diagonalized, and the **ground state** is interpreted as a pr
 
 The algorithm selects the **Maximum A Posteriori (MAP)** bitstring, which corresponds to the most likely valid move.
 
-This mimics a quantum annealing or QUBO-style optimization process.
+This mimics a quantum annealing or QUBO-style optimization process. In future extensions, the same formulation allows the interaction terms to be solved explicitly within a QUBO framework, enabling more complex coupled decision-making to be handled by dedicated QUBO solvers or quantum annealing hardware.
 
 ---
 
