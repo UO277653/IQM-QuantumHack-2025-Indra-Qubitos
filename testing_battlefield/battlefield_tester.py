@@ -47,6 +47,7 @@ class BattleResult:
     quantum_initial_count: int
     classical_initial_count: int
     duration_seconds: float
+    initial_config: str = 'default'  # 'face_to_face', 'surrounded', 'random', or 'default'
     final_positions: List[Tuple[float, float, str]] = field(default_factory=list)
 
 
@@ -162,7 +163,8 @@ class BattlefieldTester:
 
         return compositions
 
-    def run_single_battle(self, battle_id: int, quantum_comp: dict, classical_comp: dict) -> BattleResult:
+    def run_single_battle(self, battle_id: int, quantum_comp: dict, classical_comp: dict,
+                         initial_config: str = 'default') -> BattleResult:
         """
         Run a single battle and collect results.
 
@@ -170,6 +172,7 @@ class BattlefieldTester:
             battle_id: Unique identifier for this battle
             quantum_comp: Quantum team composition
             classical_comp: Classical team composition
+            initial_config: Initial configuration type ('face_to_face', 'surrounded', 'random', or 'default')
 
         Returns:
             BattleResult object with battle statistics
@@ -179,13 +182,24 @@ class BattlefieldTester:
         # Create battlefield
         battlefield = QuantumBattlefield(width=self.grid_size[0], height=self.grid_size[1])
 
-        # Initialize teams
-        battlefield.initialize_team('Quantum', quantum_comp, start_x_range=(0, 1))
-        battlefield.initialize_team('Classical', classical_comp, start_x_range=(2, 3))
-
         # Record initial counts
         quantum_initial = sum(count for count, _, _, _ in quantum_comp.values())
         classical_initial = sum(count for count, _, _, _ in classical_comp.values())
+
+        # Initialize teams based on configuration type
+        if initial_config == 'default':
+            battlefield.initialize_team('Quantum', quantum_comp, start_x_range=(0, 1))
+            battlefield.initialize_team('Classical', classical_comp, start_x_range=(2, 3))
+        else:
+            # Get positions for the specific configuration
+            quantum_positions = battlefield.get_initial_configuration_positions(
+                initial_config, 'Quantum', quantum_initial
+            )
+            classical_positions = battlefield.get_initial_configuration_positions(
+                initial_config, 'Classical', classical_initial
+            )
+            battlefield.initialize_team('Quantum', quantum_comp, positions=quantum_positions)
+            battlefield.initialize_team('Classical', classical_comp, positions=classical_positions)
 
         # Run battle
         while not battlefield.is_battle_over() and battlefield.turn < self.max_turns:
@@ -214,6 +228,7 @@ class BattlefieldTester:
             quantum_initial_count=quantum_initial,
             classical_initial_count=classical_initial,
             duration_seconds=duration,
+            initial_config=initial_config,
             final_positions=final_positions
         )
 
@@ -271,6 +286,37 @@ class BattlefieldTester:
             result = self.run_single_battle(i, quantum_comp, classical_comp)
             self.results.append(result)
 
+    def test_initial_configurations(self):
+        """Test 4: Test different initial configurations (face to face, surrounded, random)."""
+        print(f"\n{'='*60}")
+        print(f"TEST 4: INITIAL CONFIGURATIONS TEST")
+        print(f"Testing different initial battlefield configurations...")
+        print(f"{'='*60}\n")
+
+        configurations = ['face_to_face', 'surrounded', 'random']
+        battles_per_config = self.num_battles // len(configurations)
+
+        battle_id = 0
+        for config in configurations:
+            config_name = config.replace('_', ' ').title()
+            print(f"\nTesting configuration: {config_name}")
+
+            # Use a mix of random and balanced compositions
+            balanced_comps = self.get_balanced_compositions()
+
+            for i in tqdm(range(battles_per_config), desc=f"  {config_name}"):
+                if i % 3 == 0:
+                    # Use balanced composition
+                    quantum_comp, classical_comp, _ = random.choice(balanced_comps)
+                else:
+                    # Use random composition
+                    quantum_comp = self.generate_random_composition()
+                    classical_comp = self.generate_random_composition()
+
+                result = self.run_single_battle(battle_id, quantum_comp, classical_comp, initial_config=config)
+                self.results.append(result)
+                battle_id += 1
+
     def generate_comprehensive_plots(self):
         """Generate comprehensive visualization plots."""
         print(f"\n{'='*60}")
@@ -284,8 +330,8 @@ class BattlefieldTester:
         plt.rcParams['font.family'] = 'sans-serif'
         plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans']
 
-        # Create figure with subplots - 2x2 grid (4 plots)
-        fig = plt.figure(figsize=(16, 11))
+        # Create figure with subplots - 2x3 grid (6 plots)
+        fig = plt.figure(figsize=(20, 11))
         fig.patch.set_facecolor('#f8f9fa')
 
         # Add main title
@@ -294,23 +340,31 @@ class BattlefieldTester:
                      bbox=dict(boxstyle='round,pad=0.5', facecolor='#e2e8f0', edgecolor='#cbd5e1', linewidth=2))
 
         # 1. Victory Distribution (Pie Chart)
-        ax1 = plt.subplot(2, 2, 1)
+        ax1 = plt.subplot(2, 3, 1)
         self._plot_victory_distribution(ax1)
 
         # 2. Win Rate by Initial Team Size
-        ax2 = plt.subplot(2, 2, 2)
+        ax2 = plt.subplot(2, 3, 2)
         self._plot_winrate_by_team_size(ax2)
 
         # 3. Battle Outcome Timeline
-        ax3 = plt.subplot(2, 2, 3)
+        ax3 = plt.subplot(2, 3, 3)
         self._plot_battle_timeline(ax3)
 
-        # 4. Summary Statistics Table
-        ax4 = plt.subplot(2, 2, 4)
-        self._plot_summary_statistics_table(ax4)
+        # 4. Win Rate by Initial Configuration
+        ax4 = plt.subplot(2, 3, 4)
+        self._plot_winrate_by_initial_config(ax4)
+
+        # 5. Turn Distribution by Configuration
+        ax5 = plt.subplot(2, 3, 5)
+        self._plot_turns_by_config(ax5)
+
+        # 6. Summary Statistics Table
+        ax6 = plt.subplot(2, 3, 6)
+        self._plot_summary_statistics_table(ax6)
 
         plt.tight_layout(rect=[0, 0.02, 1, 0.96])
-        plt.subplots_adjust(hspace=0.35, wspace=0.25)  # Add more space between subplots
+        plt.subplots_adjust(hspace=0.30, wspace=0.25)  # Add more space between subplots
         plt.savefig('battlefield_test_results.png', dpi=300, bbox_inches='tight', facecolor='#f8f9fa')
         print("Saved comprehensive plot: battlefield_test_results.png")
         print("Displaying plot...")
@@ -434,6 +488,122 @@ class BattlefieldTester:
         # Set y-axis limits for better visualization
         ax.set_ylim([0, 100])
 
+    def _plot_winrate_by_initial_config(self, ax):
+        """Plot win rate by initial configuration."""
+        # Collect wins by configuration
+        config_wins = defaultdict(lambda: {'Quantum': 0, 'Classical': 0, 'Draw': 0, 'total': 0})
+
+        for r in self.results:
+            config = r.initial_config
+            config_wins[config][r.winner] += 1
+            config_wins[config]['total'] += 1
+
+        # Prepare data for plotting
+        configs = sorted(config_wins.keys())
+        config_labels = [c.replace('_', ' ').title() if c != 'default' else 'Default' for c in configs]
+        quantum_rates = []
+        classical_rates = []
+
+        for config in configs:
+            total = config_wins[config]['total']
+            if total > 0:
+                quantum_rates.append(config_wins[config]['Quantum'] / total * 100)
+                classical_rates.append(config_wins[config]['Classical'] / total * 100)
+            else:
+                quantum_rates.append(0)
+                classical_rates.append(0)
+
+        # Create grouped bar chart
+        x = np.arange(len(config_labels))
+        width = 0.35
+
+        bars1 = ax.bar(x - width/2, quantum_rates, width, label='Quantum',
+                      color='#3b82f6', edgecolor='white', linewidth=1.5)
+        bars2 = ax.bar(x + width/2, classical_rates, width, label='Classical',
+                      color='#ef4444', edgecolor='white', linewidth=1.5)
+
+        # Add value labels on bars
+        for bars in [bars1, bars2]:
+            for bar in bars:
+                height = bar.get_height()
+                if height > 0:
+                    ax.text(bar.get_x() + bar.get_width()/2., height,
+                           f'{height:.1f}%',
+                           ha='center', va='bottom', fontsize=9, fontweight='bold')
+
+        ax.set_xlabel('Initial Configuration', fontsize=11, fontweight='bold', color='#334155')
+        ax.set_ylabel('Win Rate (%)', fontsize=11, fontweight='bold', color='#334155')
+        ax.set_title('WIN RATE BY INITIAL CONFIGURATION', fontsize=14, fontweight='bold', pad=15, color='#1e293b')
+        ax.set_xticks(x)
+        ax.set_xticklabels(config_labels, rotation=15, ha='right')
+        ax.legend(loc='best', frameon=True, shadow=True, fancybox=True, fontsize=10)
+
+        # Better grid
+        ax.grid(True, alpha=0.2, linestyle='--', linewidth=0.8, axis='y')
+        ax.axhline(50, color='#64748b', linestyle='--', alpha=0.6, linewidth=2)
+
+        # Style the axes
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_color('#cbd5e1')
+        ax.spines['bottom'].set_color('#cbd5e1')
+        ax.set_ylim([0, 100])
+
+    def _plot_turns_by_config(self, ax):
+        """Plot average battle turns by initial configuration."""
+        # Collect turns by configuration
+        config_turns = defaultdict(list)
+
+        for r in self.results:
+            config = r.initial_config
+            config_turns[config].append(r.turns)
+
+        # Prepare data for box plot
+        configs = sorted(config_turns.keys())
+        config_labels = [c.replace('_', ' ').title() if c != 'default' else 'Default' for c in configs]
+        turns_data = [config_turns[config] for config in configs]
+
+        # Create violin plot for better distribution visualization
+        parts = ax.violinplot(turns_data, positions=range(len(configs)),
+                             showmeans=True, showmedians=True)
+
+        # Color the violin plots
+        colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6']
+        for i, pc in enumerate(parts['bodies']):
+            pc.set_facecolor(colors[i % len(colors)])
+            pc.set_alpha(0.6)
+            pc.set_edgecolor('white')
+            pc.set_linewidth(1.5)
+
+        # Style the lines
+        for partname in ('cbars', 'cmins', 'cmaxes', 'cmedians', 'cmeans'):
+            if partname in parts:
+                vp = parts[partname]
+                vp.set_edgecolor('#1e293b')
+                vp.set_linewidth(1.5)
+
+        # Add mean values as text
+        for i, config in enumerate(configs):
+            mean_val = np.mean(config_turns[config])
+            ax.text(i, mean_val, f'{mean_val:.1f}',
+                   ha='center', va='bottom', fontsize=9, fontweight='bold',
+                   bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray', alpha=0.8))
+
+        ax.set_xlabel('Initial Configuration', fontsize=11, fontweight='bold', color='#334155')
+        ax.set_ylabel('Battle Duration (Turns)', fontsize=11, fontweight='bold', color='#334155')
+        ax.set_title('BATTLE DURATION BY CONFIGURATION', fontsize=14, fontweight='bold', pad=15, color='#1e293b')
+        ax.set_xticks(range(len(config_labels)))
+        ax.set_xticklabels(config_labels, rotation=15, ha='right')
+
+        # Better grid
+        ax.grid(True, alpha=0.2, linestyle='--', linewidth=0.8, axis='y')
+
+        # Style the axes
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_color('#cbd5e1')
+        ax.spines['bottom'].set_color('#cbd5e1')
+
     def _plot_summary_statistics_table(self, ax):
         """Plot summary statistics table."""
         ax.axis('off')
@@ -519,16 +689,18 @@ Test Types:
   1 - Random Composition Test: Generate battles with completely random unit compositions
   2 - Balance Test: Test predefined compositions to analyze game balance
   3 - Performance Test: Measure battle statistics and performance metrics
+  4 - Initial Configuration Test: Test different initial battlefield configurations (face to face, surrounded, random)
 
 Examples:
   python battlefield_tester.py --test 1 --battles 1000
   python battlefield_tester.py --test 2 --battles 500
   python battlefield_tester.py --test 3 --battles 2000
+  python battlefield_tester.py --test 4 --battles 900
         """
     )
 
-    parser.add_argument('--test', type=int, choices=[1, 2, 3], required=True,
-                       help='Test type to run (1, 2, or 3)')
+    parser.add_argument('--test', type=int, choices=[1, 2, 3, 4], required=True,
+                       help='Test type to run (1, 2, 3, or 4)')
     parser.add_argument('--battles', type=int, default=100,
                        help='Number of battles to simulate (default: 100)')
     parser.add_argument('--max-turns', type=int, default=50,
@@ -563,6 +735,8 @@ Examples:
         tester.test_balanced_compositions()
     elif args.test == 3:
         tester.test_performance_metrics()
+    elif args.test == 4:
+        tester.test_initial_configurations()
 
     # Generate outputs
     tester.print_summary_statistics()

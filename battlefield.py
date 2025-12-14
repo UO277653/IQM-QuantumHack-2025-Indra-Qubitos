@@ -86,7 +86,8 @@ class QuantumBattlefield:
         """Add a soldier to the battlefield."""
         self.soldiers.append(soldier)
     
-    def initialize_team(self, team: str, composition: dict, start_x_range: Tuple[int, int]):
+    def initialize_team(self, team: str, composition: dict, start_x_range: Tuple[int, int] = None,
+                       positions: List[Tuple[float, float]] = None):
         """
         Initialize a team with given composition.
 
@@ -94,14 +95,20 @@ class QuantumBattlefield:
             team: 'Quantum' or 'Classical'
             composition: {'unit_type': (count, strength, health, range_dist)}
             start_x_range: (x_min, x_max) for starting positions (inclusive)
+            positions: Optional list of specific positions to use instead of random placement
         """
-        # All possible x positions in the allowed range
-        xs = range(start_x_range[0], start_x_range[1] + 1)
-        ys = range(self.height)
+        if positions is not None:
+            # Use provided positions
+            all_positions = positions.copy()
+        else:
+            # All possible x positions in the allowed range
+            xs = range(start_x_range[0], start_x_range[1] + 1)
+            ys = range(self.height)
 
-        # Create a list of all (x, y) pairs
-        all_positions = [(x, y) for x in xs for y in ys]
-        random.shuffle(all_positions)
+            # Create a list of all (x, y) pairs
+            all_positions = [(x, y) for x in xs for y in ys]
+            random.shuffle(all_positions)
+
         pos_index = 0
 
         for unit_type, (count, strength, health, range_dist) in composition.items():
@@ -109,12 +116,64 @@ class QuantumBattlefield:
                 if pos_index >= len(all_positions):
                     print(f"Warning: Not enough positions for all units!")
                     break
-                    
+
                 x, y = all_positions[pos_index]
                 pos_index += 1
 
                 soldier = Soldier(x, y, strength, health, unit_type, team, range_dist)
                 self.add_soldier(soldier)
+
+    def get_initial_configuration_positions(self, config_type: str, team: str, num_units: int) -> List[Tuple[float, float]]:
+        """
+        Get positions for a specific initial configuration type.
+
+        Args:
+            config_type: 'face_to_face', 'surrounded', or 'random'
+            team: 'Quantum' or 'Classical'
+            num_units: Number of units to place
+
+        Returns:
+            List of (x, y) positions
+        """
+        positions = []
+
+        if config_type == 'face_to_face':
+            # Frente a frente: teams start on opposite sides
+            if team == 'Quantum':
+                # Left side (x=0,1)
+                xs = [0, 1] * ((num_units // 2) + 1)
+                ys = list(range(self.height)) * 2
+                positions = [(xs[i], ys[i]) for i in range(num_units)]
+            else:
+                # Right side (x=2,3)
+                xs = [2, 3] * ((num_units // 2) + 1)
+                ys = list(range(self.height)) * 2
+                positions = [(xs[i], ys[i]) for i in range(num_units)]
+
+        elif config_type == 'surrounded':
+            # Rodeados: one team in center, other on edges
+            if team == 'Quantum':
+                # Quantum team in the center
+                center_positions = [
+                    (1, 1), (1, 2), (2, 1), (2, 2),  # Center positions
+                    (1, 0), (2, 0), (1, 3), (2, 3)   # Additional center-ish positions
+                ]
+                positions = center_positions[:num_units]
+            else:
+                # Classical team on the edges
+                edge_positions = [
+                    (0, 0), (0, 1), (0, 2), (0, 3),  # Left edge
+                    (3, 0), (3, 1), (3, 2), (3, 3),  # Right edge
+                ]
+                positions = edge_positions[:num_units]
+
+        elif config_type == 'random':
+            # Aleatorio: completely random positions
+            all_positions = [(x, y) for x in range(self.width) for y in range(self.height)]
+            random.shuffle(all_positions)
+            positions = all_positions[:num_units]
+
+        return positions
 
     def record_history(self):
         """Record current soldier counts for this turn."""
