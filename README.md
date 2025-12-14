@@ -75,8 +75,8 @@ The factor of `2` acts as a conservative safety margin, discouraging suicidal po
 
 The core heuristic is the scalar value ( h ), which balances offense and defense:
 
-* Lower ( h ) → more aggressive / favorable positions.
-* Higher ( h ) → more defensive / vulnerable positions.
+* Lower ( h ) → vulnearable positions.
+* Higher ( h ) → offensive positions.
 
 When information about allies is available, the heuristic adapts dynamically:
 
@@ -97,8 +97,8 @@ For each possible movement direction (left, right, up, down), a **finite-differe
 
 **Interpretation**:
 
-* ( \Delta h < 0 ): movement improves the position (preferred).
-* ( \Delta h > 0 ): movement worsens the position (penalized).
+* ( \Delta h > 0 ): movement improves the position (preferred).
+* ( \Delta h < 0 ): movement worsens the position (penalized).
 
 These gradients form the input parameters (`omega`) for the quantum-inspired decision model.
 
@@ -172,17 +172,15 @@ Even though the simulation runs on classical hardware, the formulation is direct
 
 ### **Scalability**
 
-* Current model: 4 qubits → 16-dimensional Hilbert space (cheap to simulate).
-* Can be extended to:
+The scalability of this approach does **not** rely on increasing the number of qubits per agent. Instead, the core design principle is that **each unit is described by a fixed-size quantum system** (currently 4 qubits), independent of the global battlefield size.
 
-  * Diagonal movements.
-  * Action choices beyond movement (attack, defend, retreat).
+Key scalability properties:
 
-For larger systems, classical diagonalization can be replaced by:
+* **Constant qubit count per unit**: each agent always solves the same small quantum optimization problem, making the per-decision cost bounded and predictable.
+* **Linear scaling in the number of units**: total computational cost scales with the number of agents, not with the size of the quantum state.
+* **Local decision-making**: each Hamiltonian is constructed from local information (nearby enemies and allies), avoiding global state explosion.
 
-* Sampling methods.
-* Approximate solvers.
-* Actual quantum hardware.
+This makes the approach suitable for large-scale simulations, where many agents act simultaneously, each solving a small and tractable optimization problem.
 
 ---
 
@@ -194,6 +192,7 @@ Possible extensions include:
 * Continuous-valued heuristics instead of binary ( \pm 1 ).
 * Learning ( \omega ) weights from data.
 * Multi-agent coupled Hamiltonians for coordinated strategies.
+* Explicit modeling of **team synergies**, allowing units from the same team to influence each other’s decision-making through shared interaction terms.
 
 ---
 
