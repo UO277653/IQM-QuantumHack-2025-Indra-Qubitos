@@ -133,12 +133,35 @@ The Hamiltonian is composed of three terms:
    H_{XX} = \sum_{a<b} J_{ab} X_a X_b
    ]
 
-3. **Hard constraints** implemented as energy penalties:
+3. **Hard Constraint Hamiltonian**
 
-   * Left and right cannot be chosen simultaneously.
-   * Up and down cannot be chosen simultaneously.
+Hard movement constraints are enforced by adding **energy penalty terms** to the Hamiltonian. These terms penalize forbidden action combinations by projecting onto invalid quantum states.
 
-These constraints are enforced via projectors onto forbidden states.
+For two qubits \( i, j \), the projector onto the forbidden state \(|11\rangle\) in the computational basis is given by:
+
+\[
+P^{(i,j)}_{11} = |11\rangle\langle 11| = \frac{1}{4}\left(\mathbb{I}- Z_i- Z_j+ Z_i Z_j\right)\]
+
+where \( Z_i \) and \( Z_j \) are Pauli-\(Z\) operators acting on qubits \( i \) and \( j \), and \( \mathbb{I} \) is the identity operator.
+
+In this model, two hard constraints are imposed:
+
+* Left (`I`) and right (`D`) movements cannot be selected simultaneously.
+* Up (`+`) and down (`-`) movements cannot be selected simultaneously.
+
+The corresponding constraint Hamiltonian is:
+
+\[
+H_{\text{constraints}} = K_{ID}\, P^{(I,D)}_{11} + K_{+-}\, P^{(+,-)}_{11}
+\]
+
+or, written explicitly,
+
+\[
+H_{\text{constraints}} = \frac{K_{ID}}{4}\left(\mathbb{I} - Z_I- Z_D+ Z_I Z_D\right)+\frac{K_{+-}}{4}\left(\mathbb{I}- Z_+- Z_-+ Z_+ Z_-\right)
+\]
+
+Here, \( K_{ID} \) and \( K_{+-} \) are large positive penalty coefficients. In the regime \( K \gg |\omega| \), forbidden configurations are energetically suppressed and do not appear in the ground state, ensuring logical consistency of the selected action.
 
 ---
 
