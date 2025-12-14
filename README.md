@@ -132,7 +132,7 @@ $$
 2. **Interaction terms** (currently disabled or extensible):
 
 $$
-   H_{XX} = \sum_{a b} J_{ab} X_{a} X_{b}
+   H_{XX} = \sum_{a \vert b} J_{ab} X_{a} X_{b}
 $$
 
 3. **Hard Constraint Hamiltonian**
