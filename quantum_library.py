@@ -74,6 +74,7 @@ def quantum_best_move(soldier: "Soldier", enemies: List["Soldier"], algorithm: s
         raise ValueError(f"Unknown algorithm: {algorithm}. Available: {list(ALGORITHMS.keys()) + ['quantum_step']}")
 
 # Calcular ofensiva y vulnerabilidad
+
 def calculate_offensive_power(soldier: "Soldier", enemies: List["Soldier"]) -> int:
     """
     Calculate the offensive power of a soldier towards enemies in range.
@@ -83,17 +84,16 @@ def calculate_offensive_power(soldier: "Soldier", enemies: List["Soldier"]) -> i
         enemies: List of enemy soldiers on the battlefield.
 
     Returns:
-        Total offensive power of the soldier.
+        1 if the soldier can kill the weakest enemy in range, -1 otherwise.
     """
     offensive_power = -1
 
     weakest = soldier.find_weakest_to_attack(enemies)
 
-    # si encuentra weakest, compara si el ataque del soldado es suficiente para matar al mas debil, en ese caso devuelve 1, si no -1
+    # Check if the soldier can kill the weakest enemy
     if weakest:
         if soldier.strength >= weakest.health:
             offensive_power = 1  # Can kill the weakest enemy
-        # else: offensive_power stays -1 (cannot kill)
 
     return offensive_power
 
@@ -106,11 +106,11 @@ def calculate_vulnerability(soldier: "Soldier", enemies: List["Soldier"]) -> flo
         enemies: List of enemy soldiers on the battlefield.
 
     Returns:
-        Total vulnerability of the soldier.
+        1 if the total enemy strength is greater than twice the soldier's health, -1 otherwise.
     """
     vulnerability = -1
 
-    # si la suma de las fuerzas de los enemigos es mayor que 2 veces tu vida, devuelve 1, si no devuelve -1
+    # Calculate the total strength of enemies that can attack the soldier
     total_enemy_strength = 0
     for enemy in enemies:
         if enemy.can_fight(soldier):
@@ -118,7 +118,6 @@ def calculate_vulnerability(soldier: "Soldier", enemies: List["Soldier"]) -> flo
 
     if total_enemy_strength > 2 * soldier.health:
         vulnerability = 1  # Very vulnerable (enemies can overwhelm)
-    # else: vulnerability stays -1 (not critically vulnerable)
 
     return vulnerability
 
