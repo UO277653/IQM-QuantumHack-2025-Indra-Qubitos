@@ -32,9 +32,10 @@ Classical heuristics provide an interpretable layer that grounds the quantum mod
 This function evaluates whether a unit can eliminate the weakest enemy within its attack range.
 
 $$
-P_{\text{offensive}} = \begin{cases}
-1 & \text{if the unit can kill the weakest enemy in range} \
--1 & \text{otherwise}
+P_{\text{offensive}} =
+\begin{cases}
+1, & \text{if the unit can kill the weakest enemy in range} \\
+-1, & \text{otherwise}
 \end{cases}
 $$
 
@@ -54,9 +55,10 @@ This binary formulation keeps the heuristic simple and robust, avoiding overfitt
 This function measures how exposed a unit is by summing the strength of all enemies capable of attacking it.
 
 $$
-V_{\text{unit}} = \begin{cases}
-1 & \text{if } \sum \text{enemy strength} > 2 \cdot \text{unit health} \
--1 & \text{otherwise}
+V_{\text{soldado}} =
+\begin{cases}
+1, & \text{if total\_enemy\_strength > 2 * health} \\
+-1, & \text{otherwise}
 \end{cases}
 $$
 
