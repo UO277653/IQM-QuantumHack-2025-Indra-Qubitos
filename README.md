@@ -1,138 +1,204 @@
-# Quantum Library - Hackathon 2025
+# Quantum Library – Hackathon 2025
 
-Este archivo contiene la implementación de una biblioteca cuántica simulada que utiliza principios de mecánica cuántica y heurísticas clásicas para calcular los movimientos óptimos de las piezas en un campo de batalla. A continuación, se describe el propósito, las funciones principales y las posibles mejoras del código.
-
----
-
-## **1. Introducción**
-
-El objetivo de esta biblioteca es proporcionar un sistema de decisión estratégico para las piezas en el campo de batalla. Utilizamos dos enfoques principales:
-
-- **Heurísticas clásicas**: Basadas en la evaluación de vulnerabilidad y poder ofensivo.
-- **Simulación cuántica**: Utilizando un modelo de Hamiltoniano para calcular probabilidades de movimiento.
-
-El sistema permite a las piezas tomar decisiones basadas en su entorno, maximizando las oportunidades de ataque y minimizando su vulnerabilidad.
+This repository contains the implementation of a **simulated quantum decision-making library** that combines ideas from quantum mechanics with classical heuristics to compute optimal movements for units on a battlefield. The goal is not to provide a physically accurate quantum algorithm, but rather a **conceptually inspired, interpretable, and extensible framework** that leverages quantum-like optimization principles.
 
 ---
 
-## **2. Funciones Principales**
+## **1. Introduction**
 
-### **2.1. Cálculo de Poder Ofensivo y Vulnerabilidad**
+The purpose of this library is to provide a strategic decision system for battlefield units. Each unit evaluates its environment and decides how to move in order to:
 
-A través de estas heurísticas clásicas corroboramos la interpretabilidad de los parámetros de interacción de nuestro modelo. Estas funciones evalúan la capacidad de una pieza para atacar y su exposición a ataques enemigos:
+* Maximize offensive opportunities.
+* Minimize vulnerability to enemy attacks.
+* Respect hard movement constraints (e.g., mutually exclusive directions).
+
+Two complementary approaches are combined:
+
+* **Classical heuristics**, which encode domain knowledge such as offensive power and vulnerability.
+* **Quantum-inspired simulation**, where a Hamiltonian encodes these heuristics and constraints, and the ground state determines the most likely movement.
+
+This hybrid approach offers a balance between **interpretability**, **flexibility**, and **global optimization**.
+
+---
+
+## **2. Classical Heuristics**
+
+Classical heuristics provide an interpretable layer that grounds the quantum model in intuitive battlefield logic. They are also useful on their own as a baseline or fallback strategy.
+
+### **2.1 Offensive Power**
 
 #### **`calculate_offensive_power`**
 
-Calcula el poder ofensivo de una pieza sumando la fuerza de ataque hacia los enemigos en su rango.
+This function evaluates whether a unit can eliminate the weakest enemy within its attack range.
 
-- **Fórmula**:  
-  \[
-  P_{\text{ofensivo}} = \sum_{\text{enemigos en rango}} \text{fuerza}_{\text{soldado}}
-  \]
+[
+P_{\text{offensive}} = \begin{cases}
+1 & \text{if the unit can kill the weakest enemy in range} \
+-1 & \text{otherwise}
+\end{cases}
+]
+
+**Interpretation**:
+
+* `1` indicates a clear offensive opportunity.
+* `-1` indicates that attacking is unlikely to succeed.
+
+This binary formulation keeps the heuristic simple and robust, avoiding overfitting to fine-grained combat statistics.
+
+---
+
+### **2.2 Vulnerability**
 
 #### **`calculate_vulnerability`**
 
-Calcula la vulnerabilidad de una pieza sumando la fuerza de los enemigos que pueden atacarla.
+This function measures how exposed a unit is by summing the strength of all enemies capable of attacking it.
 
-- **Fórmula**:  
-  \[
-  V_{\text{soldado}} = \sum_{\text{enemigos en rango}} \text{fuerza}_{\text{enemigo}}
-  \]
+[
+V_{\text{unit}} = \begin{cases}
+1 & \text{if } \sum \text{enemy strength} > 2 \cdot \text{unit health} \
+-1 & \text{otherwise}
+\end{cases}
+]
 
----
+**Interpretation**:
 
-### **2.2. Gradientes Heurísticos (H)**
+* `1` means the unit is in a highly dangerous position.
+* `-1` means the unit is relatively safe.
 
-#### **`calculate_h_value`**
-
-Calcula el valor heurístico \(H\) como la diferencia entre vulnerabilidad y poder ofensivo:
-
-- **Fórmula**:  
-  \[
-  H = V_{\text{soldado}} - P_{\text{ofensivo}}
-  \]
-
-- **Interpretación**:
-  - Un \(H\) alto indica una posición vulnerable.
-  - Un \(H\) bajo indica una posición ofensiva.
-
-#### **Gradientes Direccionales**
-
-Cada gradiente (\(H_{\text{up}}, H_{\text{down}}, H_{\text{left}}, H_{\text{right}}\)) evalúa cómo cambia \(H\) al moverse en una dirección específica.
-
-Ejemplo: `calculate_h_up` (moverse hacia arriba):
-
-- **Fórmula**:  
-  \[
-  H_{\text{up}} = H(y+1) - H(y)
-  \]
-
-- **Interpretación**:
-  - \(H_{\text{up}} > 0\): Moverse hacia arriba aumenta la vulnerabilidad.
-  - \(H_{\text{up}} < 0\): Moverse hacia arriba reduce la vulnerabilidad.
+The factor of `2` acts as a conservative safety margin, discouraging suicidal positioning.
 
 ---
 
-### **2.3. Simulación Cuántica**
+## **3. Heuristic Energy Function (h-value)**
 
-#### **`quantum_step`**
+### **`calculate_h_value`**
 
-Realiza un paso de decisión cuántica utilizando un modelo de Hamiltoniano. Los pasos principales son:
+The core heuristic is the scalar value ( h ), which balances offense and defense:
 
-1. Construir el Hamiltoniano \(H\) utilizando los valores de \(H_{\text{gradiente}}\).
-2. Diagonalizar \(H\) para obtener los estados propios.
-3. Seleccionar el estado más probable y traducirlo a un movimiento.
+* Lower ( h ) → more aggressive / favorable positions.
+* Higher ( h ) → more defensive / vulnerable positions.
 
-- **Fórmula del Hamiltoniano**:
-  \[
-  H = \sum_{a} \omega_a Z_a + \sum_{a,b} J_{ab} X_a X_b + K_{\text{penalización}}
-  \]
+When information about allies is available, the heuristic adapts dynamically:
 
-- **Interpretación**:
-  - El estado más probable (\(k_{\text{map}}\)) determina el movimiento óptimo.
-  - Penalizamos configuraciones no válidas para garantizar movimientos estratégicos.
+* **Numerical disadvantage** → defensive bias.
+* **Numerical advantage** → offensive bias.
 
-#### **Matrices de Pauli y Proyectores**
-
-Utilizamos matrices de Pauli (\(X, Z\)) y proyectores para construir el Hamiltoniano. Estas herramientas permiten modelar interacciones entre estados cuánticos.
-
-- **Proyector \(P_{11}\)**:
-  Penaliza configuraciones no válidas (como movimientos simultáneos en direcciones opuestas):
-  \[
-  P_{11} = \frac{1}{4}(I - Z_i - Z_j + Z_i Z_j)
-  \]
+This adaptive behavior allows the same unit logic to work across very different tactical situations.
 
 ---
 
-## **3. Justificación del Diseño**
+## **4. Spatial Gradients**
 
-1. **Interpretabilidad**:
-   - Las heurísticas (\(H\)) permiten entender cómo las decisiones afectan la vulnerabilidad y el poder ofensivo.
-   - Los gradientes direccionales explican por qué una dirección es preferida sobre otra.
+For each possible movement direction (left, right, up, down), a **finite-difference gradient** is computed:
 
-2. **Escalabilidad**:
-   - El modelo cuántico puede ampliarse para incluir más direcciones o restricciones.
-   - La estructura modular permite integrar un backend cuántico real (como Qiskit o Cirq).
+[
+\Delta h = h(\text{shifted position}) - h(\text{current position})
+]
 
-3. **Justificación Cuántica**:
-   - Aunque es una simulación, el uso de Hamiltonianos y proyectores refleja principios reales de la mecánica cuántica.
+**Interpretation**:
 
----
+* ( \Delta h < 0 ): movement improves the position (preferred).
+* ( \Delta h > 0 ): movement worsens the position (penalized).
 
-## **4. Futuras Mejoras**
-
-1. **Integración Cuántica Real**:
-   - Sustituir la simulación por un backend cuántico real para ejecutar los cálculos.
-
-2. **Optimización de Heurísticas**:
-   - Ajustar los valores de \(H\) para escenarios más complejos.
-
-3. **Ampliación del Modelo**:
-   - Incluir más tipos de piezas y reglas de combate.
-   - Incorporar interacciones más complejas en el Hamiltoniano.
+These gradients form the input parameters (`omega`) for the quantum-inspired decision model.
 
 ---
 
-## **5. Conclusión**
+## **5. Quantum-Inspired Decision Model**
 
-Este proyecto demuestra cómo los principios de la mecánica cuántica y las heurísticas clásicas pueden combinarse para tomar decisiones estratégicas en un entorno competitivo. Aunque el modelo es una aproximación, proporciona una base sólida para explorar estrategias cuánticas en simulaciones y juegos.
+### **5.1 Encoding Movements as Qubits**
+
+Each possible movement direction is mapped to a binary variable:
+
+* `I` → move left
+* `D` → move right
+* `+` → move up
+* `-` → move down
+
+Each variable is treated as a qubit, resulting in a 4-qubit system.
+
+---
+
+### **5.2 Hamiltonian Construction**
+
+The Hamiltonian is composed of three terms:
+
+1. **Local Z-fields** (heuristic bias):
+   [
+   H_Z = \sum_a \omega_a Z_a
+   ]
+
+2. **Interaction terms** (currently disabled or extensible):
+   [
+   H_{XX} = \sum_{a<b} J_{ab} X_a X_b
+   ]
+
+3. **Hard constraints** implemented as energy penalties:
+
+   * Left and right cannot be chosen simultaneously.
+   * Up and down cannot be chosen simultaneously.
+
+These constraints are enforced via projectors onto forbidden states.
+
+---
+
+### **5.3 Ground State Selection**
+
+The Hamiltonian is diagonalized, and the **ground state** is interpreted as a probability distribution over all movement combinations.
+
+The algorithm selects the **Maximum A Posteriori (MAP)** bitstring, which corresponds to the most likely valid move.
+
+This mimics a quantum annealing or QUBO-style optimization process.
+
+---
+
+## **6. Interpretation and Justification**
+
+### **Why a Quantum-Inspired Approach?**
+
+* Allows **global optimization** instead of greedy local rules.
+* Naturally incorporates **constraints** as energy penalties.
+* Produces a probabilistic landscape, not just a single deterministic score.
+* Bridges classical AI heuristics with modern quantum optimization ideas.
+
+Even though the simulation runs on classical hardware, the formulation is directly compatible with:
+
+* Quantum annealers.
+* Variational quantum algorithms (VQE, QAOA).
+
+---
+
+## **7. Scalability and Extensibility**
+
+### **Scalability**
+
+* Current model: 4 qubits → 16-dimensional Hilbert space (cheap to simulate).
+* Can be extended to:
+
+  * Diagonal movements.
+  * Action choices beyond movement (attack, defend, retreat).
+
+For larger systems, classical diagonalization can be replaced by:
+
+* Sampling methods.
+* Approximate solvers.
+* Actual quantum hardware.
+
+---
+
+### **Extensibility**
+
+Possible extensions include:
+
+* Non-zero interaction terms ( J_{ab} ) to encode synergies or conflicts.
+* Continuous-valued heuristics instead of binary ( \pm 1 ).
+* Learning ( \omega ) weights from data.
+* Multi-agent coupled Hamiltonians for coordinated strategies.
+
+---
+
+## **8. Summary**
+
+This library demonstrates how **quantum-inspired optimization** can be combined with **interpretable classical heuristics** to produce flexible, explainable, and scalable decision-making systems for games or simulations.
+
+It is designed as a conceptual and experimental framework, suitable for hackathons, research prototypes, and future quantum-enhanced AI systems.
